@@ -13,3 +13,5 @@ Switches the blending mode for all or selected layers and groups to “Multiply.
 A detailed description and FAQs can be found at https://geoobserver.de/qgis-plugin-layermultiplytoggle/
 
 Despite careful testing, we cannot accept any liability for the accuracy of all functions of the plugin. This also applies to any damage or consequences resulting from the direct or indirect use of the content provided.
+
+![QGIS_Plugin_LayerMultiplyToggle_Animation_1](./QGIS_Plugin_LayerMultiplyToggle_Animation_1.gif)
