@@ -1,0 +1,18 @@
+[general]
+name=Layer Multiply Toggle
+qgisMinimumVersion=3.0
+description=Switches the blending mode for all or selected layers and groups to "Multiply".
+version=0.1
+author=Mike Elstermann alias mikeE. & #geoObserver
+email=
+about=(23.02.2026)Adds a toolbar button to toggle the multiply blend mode for all layers or only selected layers/groups. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
+tracker=https://github.com/geoObserver/LayerMultiplyToggle/issues/
+repository=https://github.com/geoObserver/LayerMultiplyToggle/
+homepage=https://geoobserver.de/qgis-plugin-layermultiplytoggle/
+category=Plugins
+icon=icons/multiply_layers_icon_active.png
+experimental=False
+deprecated=False
+tags=layer,blend mode,multiply,rendering
+changelog=
+    v0.1 - Initial release (23.02.2026)
