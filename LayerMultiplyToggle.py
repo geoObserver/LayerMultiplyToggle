@@ -3,7 +3,7 @@
 # Author:      Mike Elstermann alias mikeE. & #geoObserver                     #
 # Version:     v0.1                                                            #
 # Created:     21.02.2026                                                      #
-# Last Change: 22.02.2026                                                      #
+# Last Change: 24.02.2026                                                      #
 # see also:    https://geoobserver.de/qgis-plugins/                            #
 #                                                                              #
 # This file contains code generated with assistance from an AI (Claude.ai)     #
@@ -28,7 +28,7 @@ class LayerMultiplyToggle:
 
         # Icon paths (bundled with plugin)
         self.ICON_OFF = os.path.join(self.plugin_dir, "icons", "multiply_layers_icon_noactive.png")
-        self.ICON_ON  = os.path.join(self.plugin_dir, "icons", "multiply_layers_icon_active.png")
+        self.ICON_ON = os.path.join(self.plugin_dir, "icons", "multiply_layers_icon_active.png")
 
     def initGui(self):
         """Initialize the plugin GUI."""

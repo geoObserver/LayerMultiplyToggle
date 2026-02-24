@@ -1,6 +1,6 @@
 # QGIS-Plugin: Layer Multiply Toggle
 
-Schaltet der Mischmodus für für alle oder ausgewählte Ebenen und Gruppen auf „Multiplizieren“  um.
+Schaltet der Mischmodus für alle oder ausgewählte Ebenen und Gruppen auf „Multiplizieren“  um.
 
 Eine genaue Beschreibung und FAQs  finden Sie unter https://geoobserver.de/qgis-plugin-layermultiplytoggle/
 
@@ -13,5 +13,9 @@ Switches the blending mode for all or selected layers and groups to “Multiply.
 A detailed description and FAQs can be found at https://geoobserver.de/qgis-plugin-layermultiplytoggle/
 
 Despite careful testing, we cannot accept any liability for the accuracy of all functions of the plugin. This also applies to any damage or consequences resulting from the direct or indirect use of the content provided.
+
+---
+
+Letzte Änderung / Last change: 24.02.2026
 
 ![QGIS_Plugin_LayerMultiplyToggle_Animation_1](./QGIS_Plugin_LayerMultiplyToggle_Animation_1.gif)
