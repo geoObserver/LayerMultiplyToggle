@@ -125,6 +125,9 @@ class LayerMultiplyToggle:
             self._cleared_connected = False
 
         self._disconnect_tree_signals()
+        # Suspend refreshes so any QTimer.singleShot already queued cannot
+        # re-add indicators after the GUI is torn down.
+        self._indicators_enabled = False
         self._clear_indicators()
 
         # Detach our action from the toolbar so the empty-check below is valid.
@@ -320,7 +323,9 @@ class LayerMultiplyToggle:
         indicator; removed layers are dropped from tracking (the view releases
         their indicator association automatically).
         """
-        if not self._indicators_enabled:
+        # self.action is None after unload; a QTimer.singleShot refresh that was
+        # queued just before unload must not re-add indicators on a dead instance.
+        if not self._indicators_enabled or self.action is None:
             return
         view = self.iface.layerTreeView()
         root = QgsProject.instance().layerTreeRoot()
