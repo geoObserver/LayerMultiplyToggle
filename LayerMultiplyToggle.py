@@ -13,6 +13,7 @@
 
 import json
 import os
+from qgis.PyQt.QtCore import QTimer
 from qgis.PyQt.QtGui import QPainter, QIcon
 from qgis.PyQt.QtWidgets import QToolBar
 try:
@@ -26,6 +27,7 @@ from qgis.core import (
     QgsLayerTreeLayer,
     QgsMessageLog,
 )
+from qgis.gui import QgsLayerTreeViewIndicator
 
 LOG_TAG = "LayerMultiplyToggle"
 
@@ -36,10 +38,13 @@ class LayerMultiplyToggle:
         self.iface = iface
         self.toolbar = None
         self.action = None
-        self._ctx_connected = False
         self._cleared_connected = False
+        self._model = None
+        self._model_connected = False
         # layer id -> blend mode (int) captured when multiply was switched on
         self.saved_blend_modes = {}
+        # layer id -> QgsLayerTreeViewIndicator currently shown in the tree
+        self._indicators = {}
         self.plugin_dir = os.path.dirname(__file__)
 
         # Icon paths (bundled with plugin)
@@ -88,15 +93,12 @@ class LayerMultiplyToggle:
             self._cleared_connected = True
         self._restore_state()
 
-        # Append entries to the layer-tree context menu (QGIS >= 3.32 only).
-        view = self.iface.layerTreeView()
-        if hasattr(view, "contextMenuAboutToShow"):
-            view.contextMenuAboutToShow.connect(self._extend_context_menu)
-            self._ctx_connected = True
-            self._log("Context-menu hook connected (contextMenuAboutToShow).")
-        else:
-            self._log("Layer-tree context menu needs QGIS >= 3.32; skipped.",
-                      Qgis.Warning)
+        # Per-layer multiply indicators in the layer tree (clickable icon next
+        # to each layer). This works independently of the layer-tree context
+        # menu, whose contextMenuAboutToShow signal is not emitted in every
+        # QGIS build/plugin combination.
+        self._connect_tree_signals()
+        self._refresh_indicators()
 
         self._log("Multiply action ready in toolbar 'geoObserverTools'.")
 
@@ -114,14 +116,8 @@ class LayerMultiplyToggle:
                 pass
             self._cleared_connected = False
 
-        if self._ctx_connected:
-            try:
-                self.iface.layerTreeView().contextMenuAboutToShow.disconnect(
-                    self._extend_context_menu
-                )
-            except (TypeError, RuntimeError):
-                pass
-            self._ctx_connected = False
+        self._disconnect_tree_signals()
+        self._clear_indicators()
 
         # Detach our action from the toolbar so the empty-check below is valid.
         if self.toolbar is not None and self.action is not None:
@@ -143,6 +139,8 @@ class LayerMultiplyToggle:
                 self.iface.mainWindow().removeToolBar(self.toolbar)
                 self.toolbar.deleteLater()
             self.toolbar = None
+
+    # --- blend-mode helpers --------------------------------------------------
 
     def _multiply_mode(self):
         """Return the Multiply CompositionMode (Qt5/Qt6 compatible)."""
@@ -172,8 +170,6 @@ class LayerMultiplyToggle:
     def set_blend_mode(self, node, mode):
         """Recursively set blend mode for all layers and groups."""
         if isinstance(node, QgsLayerTreeGroup):
-            # Groups carry no own paint-time blend mode here; only the
-            # descendant layers produce the visible effect.
             for child in node.children():
                 self.set_blend_mode(child, mode)
         elif isinstance(node, QgsLayerTreeLayer):
@@ -182,11 +178,7 @@ class LayerMultiplyToggle:
                 self._apply_to_layer(layer, mode)
 
     def _apply_to_layer(self, layer, mode):
-        """Set a layer's blend mode, capturing its original once for restore.
-
-        The original is stored as int (keyed by layer id) so it can be
-        persisted to the project and restored later.
-        """
+        """Set a layer's blend mode, capturing its original once for restore."""
         if layer.id() not in self.saved_blend_modes:
             self.saved_blend_modes[layer.id()] = self._mode_to_int(layer.blendMode())
         layer.setBlendMode(mode)
@@ -210,13 +202,14 @@ class LayerMultiplyToggle:
             layer.triggerRepaint()
         self.saved_blend_modes.clear()
 
+    # --- per-project persistence --------------------------------------------
+
     def _save_state(self):
         """Persist the active flag and captured blend modes into the project.
 
         Writes only when something actually changed: writeEntry marks the
         project dirty, so skipping no-op writes avoids spurious "unsaved
-        changes" prompts. A real state change still dirties the project,
-        which is required to persist.
+        changes" prompts.
         """
         project = QgsProject.instance()
         active = bool(self.action is not None and self.action.isChecked())
@@ -266,123 +259,129 @@ class LayerMultiplyToggle:
                 modes = {}
         self.saved_blend_modes = modes
         self._reflect_state(active)
+        self._refresh_indicators()
 
-    def _node_layer_ids(self, nodes):
-        """Collect deduplicated layer ids under the given nodes (recursive).
+    # --- per-layer indicators ------------------------------------------------
 
-        Deduplication (order preserving) avoids double work and inflated counts
-        when a group and one of its child layers are selected together.
+    def _connect_tree_signals(self):
+        """Refresh indicators whenever the layer tree structure changes."""
+        self._model = self.iface.layerTreeView().model()
+        if self._model is not None:
+            self._model.rowsInserted.connect(self._schedule_refresh)
+            self._model.rowsRemoved.connect(self._schedule_refresh)
+            self._model.modelReset.connect(self._schedule_refresh)
+            self._model_connected = True
+
+    def _disconnect_tree_signals(self):
+        if self._model_connected and self._model is not None:
+            for signal in (self._model.rowsInserted,
+                           self._model.rowsRemoved,
+                           self._model.modelReset):
+                try:
+                    signal.disconnect(self._schedule_refresh)
+                except (TypeError, RuntimeError):
+                    pass
+        self._model_connected = False
+        self._model = None
+
+    def _schedule_refresh(self, *args):
+        """Debounce: refresh after the current model change has settled."""
+        QTimer.singleShot(0, self._refresh_indicators)
+
+    def _iter_layer_nodes(self, node):
+        """Yield every QgsLayerTreeLayer node under the given node."""
+        if isinstance(node, QgsLayerTreeLayer):
+            yield node
+        elif isinstance(node, QgsLayerTreeGroup):
+            for child in node.children():
+                yield from self._iter_layer_nodes(child)
+
+    def _set_indicator_state(self, indicator, active):
+        """Set an indicator's icon/tooltip to reflect the per-layer state."""
+        indicator.setIcon(QIcon(self.ICON_ON if active else self.ICON_OFF))
+        indicator.setToolTip(
+            "Multiply: ON – click to deactivate" if active
+            else "Multiply: OFF – click to activate"
+        )
+
+    def _refresh_indicators(self):
+        """Ensure every layer carries one indicator reflecting its state.
+
+        Idempotent and move/remove safe: existing indicators are updated in
+        place (checked via view.indicators(node)); new/moved layers get a fresh
+        indicator; removed layers are dropped from tracking (the view releases
+        their indicator association automatically).
         """
-        ids = []
-        seen = set()
-
-        def walk(node):
-            if isinstance(node, QgsLayerTreeGroup):
-                for child in node.children():
-                    walk(child)
-            elif isinstance(node, QgsLayerTreeLayer):
-                layer = node.layer()
-                if layer and layer.id() not in seen:
-                    seen.add(layer.id())
-                    ids.append(layer.id())
-
-        for node in nodes:
-            walk(node)
-        return ids
-
-    def _extend_context_menu(self, menu):
-        """Append apply/restore entries to the layer-tree context menu."""
-        try:
-            view = self.iface.layerTreeView()
-            selected = view.selectedNodes()
-            current = view.currentNode()
-            # DIAGNOSTIC: confirm the slot fires and what it sees.
-            self._log(
-                f"context-menu fired: selected={len(selected)} "
-                f"current={'yes' if current is not None else 'no'}"
-            )
-            nodes = selected if selected else (
-                [current] if current is not None else []
-            )
-            if not nodes:
-                self._log("context-menu: no target node, entry skipped.")
-                return
-            # Resolve to layer ids now so the slots do not hold layer-tree node
-            # pointers that may be invalidated before the action is triggered.
-            layer_ids = self._node_layer_ids(nodes)
-            if not layer_ids:
-                self._log("context-menu: target has no layers, entry skipped.")
-                return
-
-            menu.addSeparator()
-            sub = menu.addMenu("Layer Multiply Toggle")
-            apply_act = sub.addAction("Apply multiply")
-            apply_act.triggered.connect(
-                lambda checked=False, ids=layer_ids: self._ctx_apply(ids)
-            )
-            restore_act = sub.addAction("Restore original blend mode")
-            restore_act.setEnabled(any(i in self.saved_blend_modes for i in layer_ids))
-            restore_act.triggered.connect(
-                lambda checked=False, ids=layer_ids: self._ctx_restore(ids)
-            )
-            self._log(f"context-menu: submenu added for {len(layer_ids)} layer(s).")
-        except Exception as exc:  # diagnostic: never break the host menu
-            import traceback
-            self._log(f"context-menu hook error: {exc!r}", Qgis.Critical)
-            self._log(traceback.format_exc(), Qgis.Critical)
-
-    def _ctx_apply(self, layer_ids):
-        """Apply multiply to the given layers (from the context menu)."""
-        mode = self._multiply_mode()
-        project = QgsProject.instance()
-        count = 0
-        for layer_id in layer_ids:
-            layer = project.mapLayer(layer_id)
-            if layer:
-                self._apply_to_layer(layer, mode)
-                count += 1
-        # Invariant: the toggle is "on" iff we currently hold saved layers.
-        self._reflect_state(bool(self.saved_blend_modes))
-        self._save_state()
-        self.iface.mapCanvas().refresh()
-        self._notify(f"Multiply applied to {count} layer(s).")
-
-    def _ctx_restore(self, layer_ids):
-        """Restore the original blend mode for the given layers (context menu)."""
-        project = QgsProject.instance()
-        count = 0
-        for layer_id in layer_ids:
-            if layer_id not in self.saved_blend_modes:
+        view = self.iface.layerTreeView()
+        root = QgsProject.instance().layerTreeRoot()
+        current = set()
+        for node in self._iter_layer_nodes(root):
+            layer = node.layer()
+            if layer is None:
                 continue
-            mode = self._mode_from_int(self.saved_blend_modes[layer_id])
-            layer = project.mapLayer(layer_id)
-            if mode is None:
-                self._log(
-                    f"Skipped restore of layer {layer_id}: invalid stored blend mode.",
-                    Qgis.Warning,
+            lid = layer.id()
+            current.add(lid)
+            active = lid in self.saved_blend_modes
+            ind = self._indicators.get(lid)
+            if ind is not None and ind in view.indicators(node):
+                self._set_indicator_state(ind, active)
+            else:
+                ind = QgsLayerTreeViewIndicator(view)
+                ind.clicked.connect(
+                    lambda idx, layer_id=lid: self._on_indicator_clicked(layer_id)
                 )
-            elif layer:
+                self._set_indicator_state(ind, active)
+                view.addIndicator(node, ind)
+                self._indicators[lid] = ind
+        for lid in list(self._indicators):
+            if lid not in current:
+                del self._indicators[lid]
+
+    def _clear_indicators(self):
+        """Remove all our indicators from the (still alive) layer-tree nodes."""
+        view = self.iface.layerTreeView()
+        root = QgsProject.instance().layerTreeRoot()
+        for node in self._iter_layer_nodes(root):
+            layer = node.layer()
+            if layer is None:
+                continue
+            ind = self._indicators.get(layer.id())
+            if ind is not None and ind in view.indicators(node):
+                view.removeIndicator(node, ind)
+        self._indicators = {}
+
+    def _on_indicator_clicked(self, layer_id):
+        """Toggle multiply for a single layer via its tree indicator."""
+        layer = QgsProject.instance().mapLayer(layer_id)
+        if layer is None:
+            return
+        if layer_id in self.saved_blend_modes:
+            mode = self._mode_from_int(self.saved_blend_modes[layer_id])
+            if mode is not None:
                 layer.setBlendMode(mode)
                 layer.triggerRepaint()
-                count += 1
             del self.saved_blend_modes[layer_id]
-        # Invariant: if nothing is left applied, the toggle must read "off".
+            message = f"Multiply removed from '{layer.name()}'."
+        else:
+            self._apply_to_layer(layer, self._multiply_mode())
+            message = f"Multiply applied to '{layer.name()}'."
+        # Invariant: the toolbar toggle is "on" iff we hold saved layers.
         self._reflect_state(bool(self.saved_blend_modes))
         self._save_state()
+        self._refresh_indicators()
         self.iface.mapCanvas().refresh()
-        self._notify(f"Original blend mode restored for {count} layer(s).")
+        self._notify(message)
+
+    # --- toolbar toggle ------------------------------------------------------
 
     def _apply_multiply(self):
         """Apply multiply to the selected nodes, or the whole tree if none.
 
-        Originals are captured per layer on first write, so this can be called
-        repeatedly to extend coverage without losing the initial state.
         Returns a human-readable description of the affected scope.
         """
         root = QgsProject.instance().layerTreeRoot()
         mode = self._multiply_mode()
 
-        # Selected layers/groups take precedence; otherwise the whole tree.
         selected_nodes = self.iface.layerTreeView().selectedNodes()
         target_nodes = selected_nodes if selected_nodes else root.children()
         for node in target_nodes:
@@ -397,7 +396,6 @@ class LayerMultiplyToggle:
 
         On enable it is applied to the current selection (or the whole tree if
         nothing is selected); on disable every layer it touched is restored.
-        The on/off state is intentionally decoupled from the current selection.
         """
         if checked:
             self.action.setIcon(QIcon(self.ICON_ON))
@@ -410,4 +408,5 @@ class LayerMultiplyToggle:
             self._notify("Original blend modes restored.")
 
         self._save_state()
+        self._refresh_indicators()
         self.iface.mapCanvas().refresh()
