@@ -188,32 +188,40 @@ class LayerMultiplyToggle:
         self.saved_blend_modes = modes
         self._reflect_state(active)
 
+    def _apply_multiply(self):
+        """Apply multiply to the selected nodes, or the whole tree if none.
+
+        Originals are captured per layer on first write, so this can be called
+        repeatedly to extend coverage without losing the initial state.
+        Returns a human-readable description of the affected scope.
+        """
+        root = QgsProject.instance().layerTreeRoot()
+        multiply_mode = self._multiply_mode()
+
+        # Selected layers/groups take precedence; otherwise the whole tree.
+        selected_nodes = self.iface.layerTreeView().selectedNodes()
+        target_nodes = selected_nodes if selected_nodes else root.children()
+        for node in target_nodes:
+            self.set_blend_mode(node, multiply_mode)
+
+        if selected_nodes:
+            return f"{len(selected_nodes)} selected layer(s)/group(s)"
+        return "all layers"
+
     def toggle_multiply(self, checked):
-        """Toggle multiply blend mode for selected or all layers."""
+        """Global on/off switch: multiply is a project-wide state.
+
+        On enable it is applied to the current selection (or the whole tree if
+        nothing is selected); on disable every layer it touched is restored.
+        The on/off state is intentionally decoupled from the current selection.
+        """
         if checked:
             self.action.setIcon(QIcon(self.ICON_ON))
             self.action.setToolTip("Multiply mode: ON – click to deactivate")
+            self._notify(f"Multiply applied to {self._apply_multiply()}.")
         else:
             self.action.setIcon(QIcon(self.ICON_OFF))
             self.action.setToolTip("Multiply mode: OFF – click to activate")
-
-        if checked:
-            root = QgsProject.instance().layerTreeRoot()
-            multiply_mode = self._multiply_mode()
-
-            # Selected layers/groups take precedence; otherwise the whole tree.
-            selected_nodes = self.iface.layerTreeView().selectedNodes()
-            target_nodes = selected_nodes if selected_nodes else root.children()
-            for node in target_nodes:
-                self.set_blend_mode(node, multiply_mode)
-
-            if selected_nodes:
-                self._notify(f"Multiply applied to {len(selected_nodes)} selected layer(s)/group(s).")
-            else:
-                self._notify("Multiply applied to all layers.")
-        else:
-            # Restore exactly the layers we changed, back to their real
-            # previous modes, regardless of the current selection.
             self.restore_blend_modes()
             self._notify("Original blend modes restored.")
 
