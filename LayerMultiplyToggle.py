@@ -291,7 +291,13 @@ class LayerMultiplyToggle:
 
     def _extend_context_menu(self, menu):
         """Append apply/restore entries to the layer-tree context menu."""
-        nodes = self.iface.layerTreeView().selectedNodes()
+        view = self.iface.layerTreeView()
+        nodes = view.selectedNodes()
+        if not nodes:
+            # Fall back to the right-clicked (current) node when nothing is
+            # part of the multi-selection, so the entry still shows up.
+            current = view.currentNode()
+            nodes = [current] if current is not None else []
         if not nodes:
             return
         # Resolve to layer ids now so the slots do not hold layer-tree node
