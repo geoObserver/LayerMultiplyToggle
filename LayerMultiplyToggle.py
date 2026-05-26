@@ -414,6 +414,9 @@ class LayerMultiplyToggle:
         anchor = button if button is not None else self.iface.mainWindow()
         global_pos = anchor.mapToGlobal(pos)
         (menu.exec if hasattr(menu, "exec") else menu.exec_)(global_pos)
+        # The menu is parented to the main window; free it so right-clicks
+        # don't accumulate QMenu objects.
+        menu.deleteLater()
 
     def _reset_all(self, *args):
         """Undo everything the plugin did and return to a clean state.
