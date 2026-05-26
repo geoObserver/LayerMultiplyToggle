@@ -45,6 +45,7 @@ class LayerMultiplyToggle:
         self.iface = iface
         self.toolbar = None
         self.action = None
+        self.menu = None
         self.mode_group = None
         self._ctx_connected = False
         # qualified QPainter.CompositionMode member name of the active mode
@@ -95,7 +96,8 @@ class LayerMultiplyToggle:
         # button half toggles, the arrow opens the mode menu (split button).
         tool_button = self.toolbar.widgetForAction(self.action)
         if isinstance(tool_button, QToolButton):
-            tool_button.setMenu(self._build_mode_menu())
+            self.menu = self._build_mode_menu()
+            tool_button.setMenu(self.menu)
             tool_button.setPopupMode(self._menu_popup_mode())
 
         # Keep the action in sync with the active project's persisted state.
@@ -134,11 +136,27 @@ class LayerMultiplyToggle:
         # Detach our action from the toolbar so the empty-check below is valid.
         if self.toolbar is not None and self.action is not None:
             self.toolbar.removeAction(self.action)
+        if self.action is not None:
+            # The action is parented to the main window, so removeAction does
+            # not free it; delete it explicitly so reloads do not accumulate.
+            self.action.deleteLater()
         self.action = None
+
+        # The mode menu is parented to the main window, so it outlives the
+        # tool button; delete it explicitly to avoid leaking one per reload.
+        if self.menu is not None:
+            self.menu.deleteLater()
+            self.menu = None
+        self.mode_group = None
 
         # Only remove toolbar if it is empty after removing our action
         if self.toolbar is not None:
             if len(self.toolbar.actions()) == 0:
+                # Plugin Reloader calls unload() then initGui() in the same
+                # event-loop tick. deleteLater() is deferred, so clear the
+                # objectName first: otherwise the immediate initGui() findChild()
+                # would re-attach to this dying toolbar and lose our button.
+                self.toolbar.setObjectName("")
                 self.iface.mainWindow().removeToolBar(self.toolbar)
                 self.toolbar.deleteLater()
             self.toolbar = None
