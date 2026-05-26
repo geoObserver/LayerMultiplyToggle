@@ -10,14 +10,11 @@ about=(26.05.2026) Adds a toolbar split-button that toggles a layer blend mode f
 tracker=https://github.com/geoObserver/LayerMultiplyToggle/issues/
 repository=https://github.com/geoObserver/LayerMultiplyToggle/
 homepage=https://geoobserver.de/qgis-plugin-layermultiplytoggle/
-category=Plugins
 icon=icons/multiply_layers_icon_active.png
 experimental=False
 deprecated=False
 tags=layer,blend mode,multiply,screen,overlay,rendering
 changelog=
-    v0.1 - Initial release (23.02.2026)
-    v0.2 - Minor corrections (24.02.2026)
     v0.3 - (26.05.2026)
            - Selectable blend modes (Multiply, Screen, Overlay, Darken, Lighten) via dropdown
            - Original blend modes are now preserved and restored when toggling off
@@ -25,3 +22,5 @@ changelog=
            - Toolbar entry reworked as a themed QAction split-button
            - User feedback via the QGIS message bar; logging via QgsMessageLog
            - Fixes: toolbar leak on unload, removed ineffective group blend property
+    v0.2 - Minor corrections (24.02.2026)
+    v0.1 - Initial release (23.02.2026)
