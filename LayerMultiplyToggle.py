@@ -150,12 +150,23 @@ class LayerMultiplyToggle:
         except AttributeError:
             return QPainter.CompositionMode_Multiply  # Qt5
 
+    def _mode_to_int(self, mode):
+        """Serialize a QPainter CompositionMode to int (Qt5/Qt6 safe)."""
+        try:
+            return int(mode)
+        except (TypeError, ValueError):
+            return int(getattr(mode, "value", 0))
+
     def _mode_from_int(self, value):
-        """Convert a stored integer back into a QPainter CompositionMode."""
+        """Convert a stored integer back into a QPainter CompositionMode.
+
+        Returns None for an invalid stored value so callers can skip the layer
+        instead of silently forcing a wrong (Multiply) blend mode onto it.
+        """
         try:
             return QPainter.CompositionMode(int(value))
         except (ValueError, TypeError):
-            return self._multiply_mode()
+            return None
 
     def set_blend_mode(self, node, mode):
         """Recursively set blend mode for all layers and groups."""
@@ -176,7 +187,7 @@ class LayerMultiplyToggle:
         persisted to the project and restored later.
         """
         if layer.id() not in self.saved_blend_modes:
-            self.saved_blend_modes[layer.id()] = int(layer.blendMode())
+            self.saved_blend_modes[layer.id()] = self._mode_to_int(layer.blendMode())
         layer.setBlendMode(mode)
         layer.triggerRepaint()
 
@@ -185,9 +196,17 @@ class LayerMultiplyToggle:
         project = QgsProject.instance()
         for layer_id, original_mode in self.saved_blend_modes.items():
             layer = project.mapLayer(layer_id)
-            if layer:
-                layer.setBlendMode(self._mode_from_int(original_mode))
-                layer.triggerRepaint()
+            if not layer:
+                continue
+            mode = self._mode_from_int(original_mode)
+            if mode is None:
+                self._log(
+                    f"Skipped restore of layer {layer_id}: invalid stored blend "
+                    f"mode {original_mode!r}.", Qgis.Warning
+                )
+                continue
+            layer.setBlendMode(mode)
+            layer.triggerRepaint()
         self.saved_blend_modes.clear()
 
     def _save_state(self):
@@ -248,8 +267,13 @@ class LayerMultiplyToggle:
         self._reflect_state(active)
 
     def _node_layer_ids(self, nodes):
-        """Collect the layer ids under the given layer-tree nodes (recursive)."""
+        """Collect deduplicated layer ids under the given nodes (recursive).
+
+        Deduplication (order preserving) avoids double work and inflated counts
+        when a group and one of its child layers are selected together.
+        """
         ids = []
+        seen = set()
 
         def walk(node):
             if isinstance(node, QgsLayerTreeGroup):
@@ -257,7 +281,8 @@ class LayerMultiplyToggle:
                     walk(child)
             elif isinstance(node, QgsLayerTreeLayer):
                 layer = node.layer()
-                if layer:
+                if layer and layer.id() not in seen:
+                    seen.add(layer.id())
                     ids.append(layer.id())
 
         for node in nodes:
@@ -308,13 +333,20 @@ class LayerMultiplyToggle:
         project = QgsProject.instance()
         count = 0
         for layer_id in layer_ids:
-            if layer_id in self.saved_blend_modes:
-                layer = project.mapLayer(layer_id)
-                if layer:
-                    layer.setBlendMode(self._mode_from_int(self.saved_blend_modes[layer_id]))
-                    layer.triggerRepaint()
-                del self.saved_blend_modes[layer_id]
+            if layer_id not in self.saved_blend_modes:
+                continue
+            mode = self._mode_from_int(self.saved_blend_modes[layer_id])
+            layer = project.mapLayer(layer_id)
+            if mode is None:
+                self._log(
+                    f"Skipped restore of layer {layer_id}: invalid stored blend mode.",
+                    Qgis.Warning,
+                )
+            elif layer:
+                layer.setBlendMode(mode)
+                layer.triggerRepaint()
                 count += 1
+            del self.saved_blend_modes[layer_id]
         # Invariant: if nothing is left applied, the toggle must read "off".
         self._reflect_state(bool(self.saved_blend_modes))
         self._save_state()
