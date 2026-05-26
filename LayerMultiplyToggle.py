@@ -161,12 +161,18 @@ class LayerMultiplyToggle:
         elif isinstance(node, QgsLayerTreeLayer):
             layer = node.layer()
             if layer:
-                # Remember the original mode once (stored as int so it can be
-                # persisted to the project) so toggling off can restore it.
-                if layer.id() not in self.saved_blend_modes:
-                    self.saved_blend_modes[layer.id()] = int(layer.blendMode())
-                layer.setBlendMode(mode)
-                layer.triggerRepaint()
+                self._apply_to_layer(layer, mode)
+
+    def _apply_to_layer(self, layer, mode):
+        """Set a layer's blend mode, capturing its original once for restore.
+
+        The original is stored as int (keyed by layer id) so it can be
+        persisted to the project and restored later.
+        """
+        if layer.id() not in self.saved_blend_modes:
+            self.saved_blend_modes[layer.id()] = int(layer.blendMode())
+        layer.setBlendMode(mode)
+        layer.triggerRepaint()
 
     def restore_blend_modes(self):
         """Restore the blend modes captured when multiply was activated."""
