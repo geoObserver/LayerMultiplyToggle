@@ -231,12 +231,27 @@ class LayerMultiplyToggle:
         self.saved_blend_modes.clear()
 
     def _save_state(self):
-        """Persist the active flag and captured blend modes into the project."""
+        """Persist the active flag and captured blend modes into the project.
+
+        Writes only when something actually changed: writeEntry marks the
+        project dirty, so skipping no-op writes avoids spurious "unsaved
+        changes" prompts (e.g. re-selecting the already-active mode). A real
+        state change still dirties the project, which is required to persist.
+        """
         project = QgsProject.instance()
         active = bool(self.action is not None and self.action.isChecked())
+        modes_json = json.dumps(self.saved_blend_modes)
+
+        cur_active, _ = project.readBoolEntry(LOG_TAG, "active", False)
+        cur_mode, _ = project.readEntry(LOG_TAG, "mode", "")
+        cur_modes, _ = project.readEntry(LOG_TAG, "saved_modes", "")
+        if (cur_active == active and cur_mode == self.active_mode_name
+                and cur_modes == modes_json):
+            return
+
         project.writeEntry(LOG_TAG, "active", active)
         project.writeEntry(LOG_TAG, "mode", self.active_mode_name)
-        project.writeEntry(LOG_TAG, "saved_modes", json.dumps(self.saved_blend_modes))
+        project.writeEntry(LOG_TAG, "saved_modes", modes_json)
 
     def _reflect_state(self, active):
         """Mirror the active flag in the action without re-applying anything."""
