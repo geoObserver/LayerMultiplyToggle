@@ -37,6 +37,7 @@ class LayerMultiplyToggle:
         self.toolbar = None
         self.action = None
         self._ctx_connected = False
+        self._cleared_connected = False
         # layer id -> blend mode (int) captured when multiply was switched on
         self.saved_blend_modes = {}
         self.plugin_dir = os.path.dirname(__file__)
@@ -79,8 +80,12 @@ class LayerMultiplyToggle:
         self.toolbar.addAction(self.action)
 
         # Keep the action in sync with the active project's persisted state.
-        QgsProject.instance().readProject.connect(self._restore_state)
-        QgsProject.instance().cleared.connect(self._restore_state)
+        project = QgsProject.instance()
+        project.readProject.connect(self._restore_state)
+        # cleared was added in QGIS 3.2; guard so we still load on 3.0/3.1.
+        if hasattr(project, "cleared"):
+            project.cleared.connect(self._restore_state)
+            self._cleared_connected = True
         self._restore_state()
 
         # Append entries to the layer-tree context menu (QGIS >= 3.32 only).
@@ -96,11 +101,17 @@ class LayerMultiplyToggle:
 
     def unload(self):
         """Remove the plugin GUI on unload."""
+        project = QgsProject.instance()
         try:
-            QgsProject.instance().readProject.disconnect(self._restore_state)
-            QgsProject.instance().cleared.disconnect(self._restore_state)
+            project.readProject.disconnect(self._restore_state)
         except (TypeError, RuntimeError):
             pass
+        if self._cleared_connected:
+            try:
+                project.cleared.disconnect(self._restore_state)
+            except (TypeError, RuntimeError):
+                pass
+            self._cleared_connected = False
 
         if self._ctx_connected:
             try:
