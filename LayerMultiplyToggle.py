@@ -103,7 +103,10 @@ class LayerMultiplyToggle:
     def set_blend_mode(self, node, mode):
         """Recursively set blend mode for all layers and groups."""
         if isinstance(node, QgsLayerTreeGroup):
-            node.setCustomProperty("rendering/blendMode", mode)
+            # Groups carry no own paint-time blend mode here; only the
+            # descendant layers produce the visible effect. The previous
+            # setCustomProperty("rendering/blendMode", ...) stored a
+            # QPainter enum that QGIS never applied or repainted.
             for child in node.children():
                 self.set_blend_mode(child, mode)
         elif isinstance(node, QgsLayerTreeLayer):
