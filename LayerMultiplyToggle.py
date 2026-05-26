@@ -269,6 +269,9 @@ class LayerMultiplyToggle:
             except (ValueError, TypeError):
                 modes = {}
         self.saved_blend_modes = modes
+        # A reset only suspends indicators for the current project; loading or
+        # clearing a project is a fresh start, so re-enable them here.
+        self._indicators_enabled = True
         self._reflect_state(active)
         self._refresh_indicators()
 
