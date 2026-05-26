@@ -25,6 +25,8 @@ class LayerMultiplyToggle:
         self.toolbar = None
         self.button = None
         self.action = None
+        # layer id -> blend mode captured when multiply was switched on
+        self.saved_blend_modes = {}
         self.plugin_dir = os.path.dirname(__file__)
 
         # Icon paths (bundled with plugin)
@@ -112,14 +114,25 @@ class LayerMultiplyToggle:
         elif isinstance(node, QgsLayerTreeLayer):
             layer = node.layer()
             if layer:
+                # Remember the original mode once so toggling off can
+                # restore it instead of clobbering it with "normal".
+                if layer.id() not in self.saved_blend_modes:
+                    self.saved_blend_modes[layer.id()] = layer.blendMode()
                 layer.setBlendMode(mode)
                 layer.triggerRepaint()
 
+    def restore_blend_modes(self):
+        """Restore the blend modes captured when multiply was activated."""
+        project = QgsProject.instance()
+        for layer_id, original_mode in self.saved_blend_modes.items():
+            layer = project.mapLayer(layer_id)
+            if layer:
+                layer.setBlendMode(original_mode)
+                layer.triggerRepaint()
+        self.saved_blend_modes.clear()
+
     def toggle_multiply(self, checked):
         """Toggle multiply blend mode for selected or all layers."""
-        root = QgsProject.instance().layerTreeRoot()
-        mode = self.get_composition_mode("multiply") if checked else self.get_composition_mode("normal")
-
         if checked:
             self.button.setIcon(QIcon(self.ICON_ON))
             self.button.setToolTip("Multiply mode: ON – click to deactivate")
@@ -127,16 +140,24 @@ class LayerMultiplyToggle:
             self.button.setIcon(QIcon(self.ICON_OFF))
             self.button.setToolTip("Multiply mode: OFF – click to activate")
 
-        # Check for selected layers in the layer panel
-        selected_nodes = self.iface.layerTreeView().selectedNodes()
+        if checked:
+            root = QgsProject.instance().layerTreeRoot()
+            multiply_mode = self.get_composition_mode("multiply")
 
-        if selected_nodes:
-            for node in selected_nodes:
-                self.set_blend_mode(node, mode)
-            print(f"{len(selected_nodes)} selected layer(s)/group(s) processed.")
+            # Selected layers/groups take precedence; otherwise the whole tree.
+            selected_nodes = self.iface.layerTreeView().selectedNodes()
+            target_nodes = selected_nodes if selected_nodes else root.children()
+            for node in target_nodes:
+                self.set_blend_mode(node, multiply_mode)
+
+            if selected_nodes:
+                print(f"{len(selected_nodes)} selected layer(s)/group(s) processed.")
+            else:
+                print("All layers processed.")
         else:
-            for child in root.children():
-                self.set_blend_mode(child, mode)
-            print("All layers processed.")
+            # Restore exactly the layers we changed, back to their real
+            # previous modes, regardless of the current selection.
+            self.restore_blend_modes()
+            print("Original blend modes restored.")
 
         self.iface.mapCanvas().refresh()
