@@ -24,6 +24,7 @@ class LayerMultiplyToggle:
         self.iface = iface
         self.toolbar = None
         self.button = None
+        self.action = None
         self.plugin_dir = os.path.dirname(__file__)
 
         # Icon paths (bundled with plugin)
@@ -62,11 +63,17 @@ class LayerMultiplyToggle:
         self.button.setToolTip("Multiply mode: OFF – click to activate")
         self.button.toggled.connect(self.toggle_multiply)
 
-        self.toolbar.addWidget(self.button)
+        self.action = self.toolbar.addWidget(self.button)
         print("Multiply button ready in toolbar 'geoObserverTools'.")
 
     def unload(self):
         """Remove the plugin GUI on unload."""
+        # Remove our widget action first; deleteLater() alone does not
+        # detach the QWidgetAction that addWidget() registered on the toolbar.
+        if self.toolbar is not None and self.action is not None:
+            self.toolbar.removeAction(self.action)
+        self.action = None
+
         if self.button is not None:
             self.button.deleteLater()
             self.button = None
