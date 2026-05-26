@@ -353,16 +353,25 @@ class LayerMultiplyToggle:
                 del self._indicators[lid]
 
     def _clear_indicators(self):
-        """Remove all our indicators from the (still alive) layer-tree nodes."""
+        """Remove and delete all our indicators.
+
+        Indicators are parented to the (long-lived) layer-tree view, so they
+        must be deleted explicitly — otherwise each load/reload leaks one per
+        layer. Detach from live nodes first, then delete every tracked object.
+        """
         view = self.iface.layerTreeView()
-        root = QgsProject.instance().layerTreeRoot()
-        for node in self._iter_layer_nodes(root):
+        nodes_by_id = {}
+        for node in self._iter_layer_nodes(QgsProject.instance().layerTreeRoot()):
             layer = node.layer()
-            if layer is None:
+            if layer is not None:
+                nodes_by_id[layer.id()] = node
+        for lid, ind in self._indicators.items():
+            if ind is None:
                 continue
-            ind = self._indicators.get(layer.id())
-            if ind is not None and ind in view.indicators(node):
+            node = nodes_by_id.get(lid)
+            if node is not None and ind in view.indicators(node):
                 view.removeIndicator(node, ind)
+            ind.deleteLater()
         self._indicators = {}
 
     def _on_indicator_clicked(self, layer_id):
