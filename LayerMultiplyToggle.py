@@ -18,7 +18,15 @@ try:
     from qgis.PyQt.QtWidgets import QAction  # Qt5 / QGIS 3.x
 except ImportError:
     from qgis.PyQt.QtGui import QAction  # Qt6 / QGIS 4.x
-from qgis.core import QgsProject, QgsLayerTreeGroup, QgsLayerTreeLayer
+from qgis.core import (
+    Qgis,
+    QgsProject,
+    QgsLayerTreeGroup,
+    QgsLayerTreeLayer,
+    QgsMessageLog,
+)
+
+LOG_TAG = "LayerMultiplyToggle"
 
 
 class LayerMultiplyToggle:
@@ -35,6 +43,17 @@ class LayerMultiplyToggle:
         self.ICON_OFF = os.path.join(self.plugin_dir, "icons", "multiply_layers_icon_noactive.png")
         self.ICON_ON = os.path.join(self.plugin_dir, "icons", "multiply_layers_icon_active.png")
 
+    def _log(self, message, level=Qgis.Info):
+        """Write a line to the QGIS message log under the plugin's tag."""
+        QgsMessageLog.logMessage(message, LOG_TAG, level)
+
+    def _notify(self, message, level=Qgis.Info):
+        """Show a transient message in the QGIS message bar and log it."""
+        self.iface.messageBar().pushMessage(
+            "Layer Multiply Toggle", message, level=level, duration=3
+        )
+        self._log(message, level)
+
     def initGui(self):
         """Initialize the plugin GUI."""
 
@@ -44,9 +63,9 @@ class LayerMultiplyToggle:
             self.toolbar = QToolBar("geoObserverTools")
             self.toolbar.setObjectName("geoObserverTools")
             self.iface.mainWindow().addToolBar(self.toolbar)
-            print("Toolbar 'geoObserverTools' created.")
+            self._log("Toolbar 'geoObserverTools' created.")
         else:
-            print("Toolbar 'geoObserverTools' found.")
+            self._log("Toolbar 'geoObserverTools' found.")
 
         # Create a checkable action; QToolBar renders it as a themed
         # QToolButton that honours the QGIS icon size and dark/light theme.
@@ -57,7 +76,7 @@ class LayerMultiplyToggle:
         self.action.toggled.connect(self.toggle_multiply)
 
         self.toolbar.addAction(self.action)
-        print("Multiply button ready in toolbar 'geoObserverTools'.")
+        self._log("Multiply action ready in toolbar 'geoObserverTools'.")
 
     def unload(self):
         """Remove the plugin GUI on unload."""
@@ -137,13 +156,13 @@ class LayerMultiplyToggle:
                 self.set_blend_mode(node, multiply_mode)
 
             if selected_nodes:
-                print(f"{len(selected_nodes)} selected layer(s)/group(s) processed.")
+                self._notify(f"Multiply applied to {len(selected_nodes)} selected layer(s)/group(s).")
             else:
-                print("All layers processed.")
+                self._notify("Multiply applied to all layers.")
         else:
             # Restore exactly the layers we changed, back to their real
             # previous modes, regardless of the current selection.
             self.restore_blend_modes()
-            print("Original blend modes restored.")
+            self._notify("Original blend modes restored.")
 
         self.iface.mapCanvas().refresh()
