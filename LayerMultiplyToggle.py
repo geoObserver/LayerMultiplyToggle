@@ -93,6 +93,7 @@ class LayerMultiplyToggle:
         if hasattr(view, "contextMenuAboutToShow"):
             view.contextMenuAboutToShow.connect(self._extend_context_menu)
             self._ctx_connected = True
+            self._log("Context-menu hook connected (contextMenuAboutToShow).")
         else:
             self._log("Layer-tree context menu needs QGIS >= 3.32; skipped.",
                       Qgis.Warning)
@@ -291,32 +292,44 @@ class LayerMultiplyToggle:
 
     def _extend_context_menu(self, menu):
         """Append apply/restore entries to the layer-tree context menu."""
-        view = self.iface.layerTreeView()
-        nodes = view.selectedNodes()
-        if not nodes:
-            # Fall back to the right-clicked (current) node when nothing is
-            # part of the multi-selection, so the entry still shows up.
+        try:
+            view = self.iface.layerTreeView()
+            selected = view.selectedNodes()
             current = view.currentNode()
-            nodes = [current] if current is not None else []
-        if not nodes:
-            return
-        # Resolve to layer ids now so the slots do not hold layer-tree node
-        # pointers that may be invalidated before the menu action is triggered.
-        layer_ids = self._node_layer_ids(nodes)
-        if not layer_ids:
-            return
+            # DIAGNOSTIC: confirm the slot fires and what it sees.
+            self._log(
+                f"context-menu fired: selected={len(selected)} "
+                f"current={'yes' if current is not None else 'no'}"
+            )
+            nodes = selected if selected else (
+                [current] if current is not None else []
+            )
+            if not nodes:
+                self._log("context-menu: no target node, entry skipped.")
+                return
+            # Resolve to layer ids now so the slots do not hold layer-tree node
+            # pointers that may be invalidated before the action is triggered.
+            layer_ids = self._node_layer_ids(nodes)
+            if not layer_ids:
+                self._log("context-menu: target has no layers, entry skipped.")
+                return
 
-        menu.addSeparator()
-        sub = menu.addMenu("Layer Multiply Toggle")
-        apply_act = sub.addAction("Apply multiply")
-        apply_act.triggered.connect(
-            lambda checked=False, ids=layer_ids: self._ctx_apply(ids)
-        )
-        restore_act = sub.addAction("Restore original blend mode")
-        restore_act.setEnabled(any(i in self.saved_blend_modes for i in layer_ids))
-        restore_act.triggered.connect(
-            lambda checked=False, ids=layer_ids: self._ctx_restore(ids)
-        )
+            menu.addSeparator()
+            sub = menu.addMenu("Layer Multiply Toggle")
+            apply_act = sub.addAction("Apply multiply")
+            apply_act.triggered.connect(
+                lambda checked=False, ids=layer_ids: self._ctx_apply(ids)
+            )
+            restore_act = sub.addAction("Restore original blend mode")
+            restore_act.setEnabled(any(i in self.saved_blend_modes for i in layer_ids))
+            restore_act.triggered.connect(
+                lambda checked=False, ids=layer_ids: self._ctx_restore(ids)
+            )
+            self._log(f"context-menu: submenu added for {len(layer_ids)} layer(s).")
+        except Exception as exc:  # diagnostic: never break the host menu
+            import traceback
+            self._log(f"context-menu hook error: {exc!r}", Qgis.Critical)
+            self._log(traceback.format_exc(), Qgis.Critical)
 
     def _ctx_apply(self, layer_ids):
         """Apply multiply to the given layers (from the context menu)."""
