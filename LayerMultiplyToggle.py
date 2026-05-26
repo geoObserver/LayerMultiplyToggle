@@ -11,6 +11,7 @@
 # Human review and modification performed by: Mike Elstermann (#geoObserver)   #
 # -----------------------------------------------------------------------------#
 
+import json
 import os
 from qgis.PyQt.QtGui import QPainter, QIcon
 from qgis.PyQt.QtWidgets import QToolBar
@@ -76,10 +77,22 @@ class LayerMultiplyToggle:
         self.action.toggled.connect(self.toggle_multiply)
 
         self.toolbar.addAction(self.action)
+
+        # Keep the action in sync with the active project's persisted state.
+        QgsProject.instance().readProject.connect(self._restore_state)
+        QgsProject.instance().cleared.connect(self._restore_state)
+        self._restore_state()
+
         self._log("Multiply action ready in toolbar 'geoObserverTools'.")
 
     def unload(self):
         """Remove the plugin GUI on unload."""
+        try:
+            QgsProject.instance().readProject.disconnect(self._restore_state)
+            QgsProject.instance().cleared.disconnect(self._restore_state)
+        except (TypeError, RuntimeError):
+            pass
+
         # Detach our action from the toolbar so the empty-check below is valid.
         if self.toolbar is not None and self.action is not None:
             self.toolbar.removeAction(self.action)
@@ -99,6 +112,13 @@ class LayerMultiplyToggle:
         except AttributeError:
             return QPainter.CompositionMode_Multiply  # Qt5
 
+    def _mode_from_int(self, value):
+        """Convert a stored integer back into a QPainter CompositionMode."""
+        try:
+            return QPainter.CompositionMode(int(value))
+        except (ValueError, TypeError):
+            return self._multiply_mode()
+
     def set_blend_mode(self, node, mode):
         """Recursively set blend mode for all layers and groups."""
         if isinstance(node, QgsLayerTreeGroup):
@@ -111,10 +131,10 @@ class LayerMultiplyToggle:
         elif isinstance(node, QgsLayerTreeLayer):
             layer = node.layer()
             if layer:
-                # Remember the original mode once so toggling off can
-                # restore it instead of clobbering it with "normal".
+                # Remember the original mode once (stored as int so it can be
+                # persisted to the project) so toggling off can restore it.
                 if layer.id() not in self.saved_blend_modes:
-                    self.saved_blend_modes[layer.id()] = layer.blendMode()
+                    self.saved_blend_modes[layer.id()] = int(layer.blendMode())
                 layer.setBlendMode(mode)
                 layer.triggerRepaint()
 
@@ -124,9 +144,49 @@ class LayerMultiplyToggle:
         for layer_id, original_mode in self.saved_blend_modes.items():
             layer = project.mapLayer(layer_id)
             if layer:
-                layer.setBlendMode(original_mode)
+                layer.setBlendMode(self._mode_from_int(original_mode))
                 layer.triggerRepaint()
         self.saved_blend_modes.clear()
+
+    def _save_state(self):
+        """Persist the active flag and captured blend modes into the project."""
+        project = QgsProject.instance()
+        active = bool(self.action is not None and self.action.isChecked())
+        project.writeEntry(LOG_TAG, "active", active)
+        project.writeEntry(LOG_TAG, "saved_modes", json.dumps(self.saved_blend_modes))
+
+    def _reflect_state(self, active):
+        """Mirror the active flag in the action without re-applying anything."""
+        if self.action is None:
+            return
+        self.action.blockSignals(True)
+        self.action.setChecked(active)
+        if active:
+            self.action.setIcon(QIcon(self.ICON_ON))
+            self.action.setToolTip("Multiply mode: ON – click to deactivate")
+        else:
+            self.action.setIcon(QIcon(self.ICON_OFF))
+            self.action.setToolTip("Multiply mode: OFF – click to activate")
+        self.action.blockSignals(False)
+
+    def _restore_state(self, *args):
+        """Load persisted state from the current project and mirror it.
+
+        The layers already carry their stored blend mode from the project file,
+        so we only reload the captured originals and reflect the on/off state;
+        we never re-apply multiply here (that would corrupt the saved originals).
+        """
+        project = QgsProject.instance()
+        active, _ = project.readBoolEntry(LOG_TAG, "active", False)
+        raw, _ = project.readEntry(LOG_TAG, "saved_modes", "")
+        modes = {}
+        if raw:
+            try:
+                modes = {str(k): int(v) for k, v in json.loads(raw).items()}
+            except (ValueError, TypeError):
+                modes = {}
+        self.saved_blend_modes = modes
+        self._reflect_state(active)
 
     def toggle_multiply(self, checked):
         """Toggle multiply blend mode for selected or all layers."""
@@ -157,4 +217,5 @@ class LayerMultiplyToggle:
             self.restore_blend_modes()
             self._notify("Original blend modes restored.")
 
+        self._save_state()
         self.iface.mapCanvas().refresh()
