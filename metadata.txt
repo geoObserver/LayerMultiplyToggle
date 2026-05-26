@@ -6,7 +6,7 @@ description=Toggle the Multiply blend mode for all or selected layers and groups
 version=0.4
 author=Mike Elstermann (#geoObserver)
 email=news@geoobserver.de
-about=(26.05.2026) Adds a toolbar button that toggles the Multiply blend mode for all layers or only the selected layers/groups. A clickable Multiply icon next to each layer in the layer tree toggles Multiply per layer. Original blend modes are preserved and restored on toggling off, and the on/off state is stored per project. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
+about=(26.05.2026) Adds a toolbar button that toggles the Multiply blend mode for all layers or only the selected layers/groups. A clickable Multiply icon next to each layer in the layer tree toggles Multiply per layer. Right-clicking the toolbar button resets everything (restore originals, remove icons, toggle off). Original blend modes are preserved and restored on toggling off, and the on/off state is stored per project. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
 tracker=https://github.com/geoObserver/LayerMultiplyToggle/issues/
 repository=https://github.com/geoObserver/LayerMultiplyToggle/
 homepage=https://geoobserver.de/qgis-plugin-layermultiplytoggle/
@@ -19,6 +19,7 @@ changelog=
            - Preserves and exactly restores the original blend modes on toggling off
            - Per-project persistence of the on/off state
            - Per-layer Multiply toggle in the layer tree via a clickable indicator icon
+           - Right-click the toolbar button to reset everything (restore, remove icons, off)
            - Toolbar entry reworked as a themed QAction; message-bar feedback
            - Compatible with the Plugin Reloader plugin (clean reload)
            - Deliberately limited to the Multiply blend mode

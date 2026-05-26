@@ -53,6 +53,7 @@ In der Kartografie sollen sich Ebenen oft gegenseitig durchscheinen lassen, stat
 - **Anklickbares Multiply-Icon je Layer** im Layerbaum: schaltet Multiplizieren nur für diesen Layer ein/aus; das Icon zeigt den Zustand.
 - **Ursprüngliche Mischmodi werden gesichert** und beim Ausschalten exakt wiederhergestellt – kein Überschreiben bewusst gesetzter Modi.
 - **Projektbezogene Persistenz**: Der Ein/Aus-Zustand übersteht Speichern, Schließen und erneutes Öffnen des Projekts.
+- **Rechtsklick auf den Werkzeugknopf = Reset**: stellt alle ursprünglichen Mischmodi wieder her, entfernt alle Plugin-Icons aus dem Layerbaum, löscht den gespeicherten Status und schaltet den Toggle auf „aus".
 - Kompatibel mit dem Plugin **Plugin Reloader** (sauberes Neuladen).
 - Rückmeldungen über die QGIS-Meldungsleiste, Protokollierung im QGIS-Logfenster (Reiter `LayerMultiplyToggle`).
 
@@ -69,6 +70,7 @@ Alternativ manuell: den Plugin-Ordner nach `…/QGIS3/profiles/default/python/pl
 2. In der Werkzeugleiste auf den **Layer-Multiply-Knopf** klicken: Multiplizieren wird gesetzt (Knopf „an").
 3. Erneuter Klick auf den Knopf stellt die ursprünglichen Mischmodi wieder her (Knopf „aus").
 4. Alternativ pro Layer: im Layerbaum auf das **Multiply-Icon** rechts neben dem Layernamen klicken — schaltet Multiplizieren nur für diesen Layer um (das Icon zeigt an/aus).
+5. **Rechtsklick auf den Werkzeugknopf** öffnet ein kleines Menü *Reset* — setzt alles zurück (Original-Mischmodi wiederhergestellt, alle Layerbaum-Icons entfernt, Status gelöscht, Toggle „aus").
 
 ## Was Multiplizieren bewirkt
 
@@ -110,6 +112,7 @@ In cartography, layers should often show through one another instead of hiding e
 - **Per-layer toggle in the layer tree**: a clickable Multiply icon next to each layer turns Multiply on/off for that layer; the icon reflects the state.
 - **Original blend modes are captured** and restored exactly when toggling off, so deliberately set modes are not overwritten.
 - **Per-project persistence**: the on/off state survives saving, closing and reopening the project.
+- **Right-click the toolbar button = reset**: restores every layer's original blend mode, removes all plugin icons from the layer tree, clears the stored state and switches the toggle off.
 - Compatible with the **Plugin Reloader** plugin (clean reload).
 - Feedback via the QGIS message bar, logging in the QGIS log panel (tab `LayerMultiplyToggle`).
 
@@ -126,6 +129,7 @@ Or manually: copy the plugin folder into `…/QGIS3/profiles/default/python/plug
 2. Click the **Layer Multiply button** in the toolbar: Multiply is applied (button "on").
 3. Click the button again to restore the original blend modes (button "off").
 4. Alternatively, per layer: click the **Multiply icon** next to a layer name in the layer tree to toggle Multiply for that single layer (the icon shows on/off).
+5. **Right-click the toolbar button** opens a small *Reset* menu — undoes everything (original blend modes restored, all layer-tree icons removed, stored state cleared, toggle off).
 
 ## What Multiply does
 
@@ -154,8 +158,8 @@ The **Multiply** blend mode multiplies a layer's colours with those beneath it �
 ## Letzte Änderungen / Changelog
 
 ### v0.4 (26.05.2026)
-- **DE:** Sicherung und exakte Wiederherstellung der ursprünglichen Mischmodi beim Ausschalten. Projektbezogene Persistenz des Ein/Aus-Zustands. Anklickbares Multiply-Icon je Layer im Layerbaum (Multiplizieren pro Layer an/aus). Werkzeugknopf als QAction neu umgesetzt, Rückmeldung über die Meldungsleiste. Kompatibilität mit dem Plugin Reloader. Bewusste Beschränkung auf den Modus **Multiplizieren**. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
-- **EN:** Captures and exactly restores the original blend modes on toggling off. Per-project persistence of the on/off state. Per-layer Multiply toggle in the layer tree via a clickable indicator icon. Toolbar button reworked as a QAction, feedback via the message bar. Plugin Reloader compatibility. Deliberately limited to the **Multiply** mode. Bug fixes (toolbar leak on unload, removed ineffective group property).
+- **DE:** Sicherung und exakte Wiederherstellung der ursprünglichen Mischmodi beim Ausschalten. Projektbezogene Persistenz des Ein/Aus-Zustands. Anklickbares Multiply-Icon je Layer im Layerbaum (Multiplizieren pro Layer an/aus). Rechtsklick auf den Werkzeugknopf für vollständigen Reset. Werkzeugknopf als QAction neu umgesetzt, Rückmeldung über die Meldungsleiste. Kompatibilität mit dem Plugin Reloader. Bewusste Beschränkung auf den Modus **Multiplizieren**. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
+- **EN:** Captures and exactly restores the original blend modes on toggling off. Per-project persistence of the on/off state. Per-layer Multiply toggle in the layer tree via a clickable indicator icon. Right-click the toolbar button for a full reset. Toolbar button reworked as a QAction, feedback via the message bar. Plugin Reloader compatibility. Deliberately limited to the **Multiply** mode. Bug fixes (toolbar leak on unload, removed ineffective group property).
 
 ### v0.2 (24.02.2026)
 - **DE:** Kleinere Korrekturen. — **EN:** Minor corrections.
