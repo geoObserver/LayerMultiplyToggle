@@ -162,11 +162,20 @@ class LayerMultiplyToggle:
             self.toolbar = None
 
     def _composition_mode(self, enum_name):
-        """Resolve a QPainter.CompositionMode member by name (Qt5/Qt6 safe)."""
-        try:
-            return getattr(QPainter.CompositionMode, enum_name)  # Qt6 / PyQt5>=5.15
-        except AttributeError:
-            return getattr(QPainter, enum_name)  # older PyQt5 (unscoped enums)
+        """Resolve a QPainter.CompositionMode member by name (Qt5/Qt6 safe).
+
+        Falls back to Multiply for an unknown name (e.g. a mode token from a
+        newer/older plugin version persisted in the project) instead of
+        raising AttributeError.
+        """
+        mode = getattr(QPainter.CompositionMode, enum_name, None)  # Qt6 / PyQt5>=5.15
+        if mode is None:
+            mode = getattr(QPainter, enum_name, None)  # older PyQt5 (unscoped enums)
+        if mode is None:
+            mode = getattr(QPainter.CompositionMode, "CompositionMode_Multiply", None)
+        if mode is None:
+            mode = QPainter.CompositionMode_Multiply
+        return mode
 
     def _multiply_mode(self):
         """Return the Multiply CompositionMode (Qt5/Qt6 compatible)."""
@@ -256,13 +265,22 @@ class LayerMultiplyToggle:
         modes = {}
         if raw:
             try:
-                modes = {str(k): int(v) for k, v in json.loads(raw).items()}
+                parsed = json.loads(raw)
+                # Guard against a non-object JSON (e.g. "null"/"[...]") whose
+                # .items() would raise AttributeError in this readProject slot.
+                if isinstance(parsed, dict):
+                    modes = {str(k): int(v) for k, v in parsed.items()}
             except (ValueError, TypeError):
                 modes = {}
         self.saved_blend_modes = modes
-        self.active_mode_name = project.readEntry(
-            LOG_TAG, "mode", "CompositionMode_Multiply"
-        )[0] or "CompositionMode_Multiply"
+
+        # Only accept a mode token we actually offer; fall back otherwise so a
+        # stale/cross-version project entry cannot break apply/toggle later.
+        valid_modes = {enum_name for _, enum_name in self.BLEND_MODES}
+        mode_name = project.readEntry(LOG_TAG, "mode", "CompositionMode_Multiply")[0]
+        self.active_mode_name = (
+            mode_name if mode_name in valid_modes else "CompositionMode_Multiply"
+        )
         self._sync_mode_menu()
         self._reflect_state(active)
 
