@@ -14,7 +14,6 @@ category=Plugins
 icon=icons/multiply_layers_icon_active.png
 experimental=False
 deprecated=False
-supportsQt6=True
 tags=layer,blend mode,multiply,rendering
 changelog=
     v0.1 - Initial release (23.02.2026)
