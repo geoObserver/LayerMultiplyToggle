@@ -13,9 +13,9 @@
 
 import json
 import os
-from qgis.PyQt.QtCore import QTimer
+from qgis.PyQt.QtCore import Qt, QTimer
 from qgis.PyQt.QtGui import QPainter, QIcon
-from qgis.PyQt.QtWidgets import QToolBar
+from qgis.PyQt.QtWidgets import QToolBar, QMenu
 try:
     from qgis.PyQt.QtWidgets import QAction  # Qt5 / QGIS 3.x
 except ImportError:
@@ -41,6 +41,8 @@ class LayerMultiplyToggle:
         self._cleared_connected = False
         self._model = None
         self._model_connected = False
+        # while False (after a reset) no per-layer indicators are shown
+        self._indicators_enabled = True
         # layer id -> blend mode (int) captured when multiply was switched on
         self.saved_blend_modes = {}
         # layer id -> QgsLayerTreeViewIndicator currently shown in the tree
@@ -83,6 +85,12 @@ class LayerMultiplyToggle:
         self.action.setToolTip("Multiply mode: OFF – click to activate")
         self.action.toggled.connect(self.toggle_multiply)
         self.toolbar.addAction(self.action)
+
+        # Right-click on the toolbar button opens a small reset menu.
+        button = self.toolbar.widgetForAction(self.action)
+        if button is not None:
+            button.setContextMenuPolicy(self._custom_ctx_policy())
+            button.customContextMenuRequested.connect(self._show_reset_menu)
 
         # Keep the action in sync with the active project's persisted state.
         project = QgsProject.instance()
@@ -312,6 +320,8 @@ class LayerMultiplyToggle:
         indicator; removed layers are dropped from tracking (the view releases
         their indicator association automatically).
         """
+        if not self._indicators_enabled:
+            return
         view = self.iface.layerTreeView()
         root = QgsProject.instance().layerTreeRoot()
         current = set()
@@ -372,6 +382,42 @@ class LayerMultiplyToggle:
         self.iface.mapCanvas().refresh()
         self._notify(message)
 
+    # --- reset ---------------------------------------------------------------
+
+    def _custom_ctx_policy(self):
+        """Return Qt.CustomContextMenu (Qt5/Qt6 safe)."""
+        try:
+            return Qt.ContextMenuPolicy.CustomContextMenu  # Qt6 / PyQt5>=5.15
+        except AttributeError:
+            return Qt.CustomContextMenu  # older PyQt5
+
+    def _show_reset_menu(self, pos):
+        """Right-click menu on the toolbar button: offer a full reset."""
+        button = self.toolbar.widgetForAction(self.action) if self.toolbar else None
+        menu = QMenu(self.iface.mainWindow())
+        act = menu.addAction("Reset: undo all changes and remove icons")
+        act.triggered.connect(self._reset_all)
+        anchor = button if button is not None else self.iface.mainWindow()
+        global_pos = anchor.mapToGlobal(pos)
+        (menu.exec if hasattr(menu, "exec") else menu.exec_)(global_pos)
+
+    def _reset_all(self, *args):
+        """Undo everything the plugin did and return to a clean state.
+
+        Restores every layer's original blend mode, clears the persisted
+        project entries, removes all per-layer indicators (and suspends them
+        until multiply is switched on again) and sets the toggle to off.
+        """
+        self.restore_blend_modes()  # restore originals + clear saved_blend_modes
+        project = QgsProject.instance()
+        project.removeEntry(LOG_TAG, "active")
+        project.removeEntry(LOG_TAG, "saved_modes")
+        self._reflect_state(False)  # toggle off (no signal)
+        self._indicators_enabled = False
+        self._clear_indicators()  # remove all icons from the layer tree
+        self.iface.mapCanvas().refresh()
+        self._notify("Reset: original blend modes restored, indicators removed.")
+
     # --- toolbar toggle ------------------------------------------------------
 
     def _apply_multiply(self):
@@ -398,6 +444,8 @@ class LayerMultiplyToggle:
         nothing is selected); on disable every layer it touched is restored.
         """
         if checked:
+            # a reset may have suspended the indicators; re-enable on activate.
+            self._indicators_enabled = True
             self.action.setIcon(QIcon(self.ICON_ON))
             self.action.setToolTip("Multiply mode: ON – click to deactivate")
             self._notify(f"Multiply applied to {self._apply_multiply()}.")
