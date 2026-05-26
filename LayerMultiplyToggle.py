@@ -387,8 +387,15 @@ class LayerMultiplyToggle:
             if mode is not None:
                 layer.setBlendMode(mode)
                 layer.triggerRepaint()
+                message = f"Multiply removed from '{layer.name()}'."
+            else:
+                self._log(
+                    f"Layer {layer_id}: invalid stored blend mode, left unchanged.",
+                    Qgis.Warning,
+                )
+                message = (f"Cleared stored state for '{layer.name()}' "
+                           f"(original blend mode could not be restored).")
             del self.saved_blend_modes[layer_id]
-            message = f"Multiply removed from '{layer.name()}'."
         else:
             self._apply_to_layer(layer, self._multiply_mode())
             message = f"Multiply applied to '{layer.name()}'."
