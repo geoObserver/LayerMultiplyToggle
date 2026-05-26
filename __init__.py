@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------#
 # Title:       LayerMultiplyToggle                                             #
 # Author:      Mike Elstermann alias mikeE. & #geoObserver                     #
-# Version:     v0.3                                                            #
+# Version:     v0.4                                                            #
 # Created:     21.02.2026                                                      #
 # Last Change: 26.05.2026                                                      #
 # see also:    https://geoobserver.de/qgis-plugins/                            #

@@ -3,10 +3,10 @@ name=Layer Multiply Toggle
 qgisMinimumVersion=3.0
 qgisMaximumVersion=4.99
 description=Toggle a blend mode (Multiply, Screen, Overlay, Darken, Lighten) for all or selected layers and groups with a single click.
-version=0.3
+version=0.4
 author=Mike Elstermann (#geoObserver)
 email=news@geoobserver.de
-about=(26.05.2026) Adds a toolbar split-button that toggles a layer blend mode for all layers or only the selected layers/groups. The blend mode (Multiply, Screen, Overlay, Darken, Lighten) is chosen from a dropdown. Original blend modes are preserved and restored on toggling off, and the on/off state plus chosen mode are stored per project. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
+about=(26.05.2026) Adds a toolbar split-button that toggles a layer blend mode for all layers or only the selected layers/groups. The blend mode (Multiply, Screen, Overlay, Darken, Lighten) is chosen from a dropdown, and the same actions are available from the layer-tree right-click menu (QGIS 3.32+). Original blend modes are preserved and restored on toggling off, and the on/off state plus chosen mode are stored per project. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
 tracker=https://github.com/geoObserver/LayerMultiplyToggle/issues/
 repository=https://github.com/geoObserver/LayerMultiplyToggle/
 homepage=https://geoobserver.de/qgis-plugin-layermultiplytoggle/
@@ -15,6 +15,11 @@ experimental=False
 deprecated=False
 tags=layer,blend mode,multiply,screen,overlay,rendering
 changelog=
+    v0.4 - (26.05.2026)
+           - Layer-tree right-click menu: apply the active blend mode to, or restore
+             the original for, the selected layers/groups (QGIS 3.32+)
+           - Compatible with the Plugin Reloader plugin (clean reload)
+           - Hardened reading of per-project state; avoids spurious "unsaved changes"
     v0.3 - (26.05.2026)
            - Selectable blend modes (Multiply, Screen, Overlay, Darken, Lighten) via dropdown
            - Original blend modes are now preserved and restored when toggling off

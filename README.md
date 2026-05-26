@@ -2,7 +2,7 @@
 
 ![QGIS](https://img.shields.io/badge/QGIS-3.x%20%7C%204.x-589632?logo=qgis&logoColor=white)
 ![Qt](https://img.shields.io/badge/Qt-5%20%7C%206-41cd52?logo=qt&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.3-blue)
+![Version](https://img.shields.io/badge/version-0.4-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0-brightgreen)
 
 **DE** — Schaltet mit einem Klick einen Mischmodus (Multiplizieren, Negativ multiplizieren, Ineinanderkopieren, Abdunkeln, Aufhellen) für **alle** oder nur die **ausgewählten** Ebenen und Gruppen ein und wieder aus.
@@ -50,8 +50,10 @@ In der Kartografie sollen sich Ebenen oft gegenseitig durchscheinen lassen, stat
 - Ein-Klick-Umschalter in der Werkzeugleiste `geoObserverTools` (geteilter Knopf mit Aufklapp-Menü).
 - Wirkt auf **alle** Ebenen oder nur auf die im Layerbaum **ausgewählten** Ebenen und Gruppen (rekursiv inkl. Untergruppen).
 - Auswählbarer Mischmodus: **Multiplizieren, Negativ multiplizieren, Ineinanderkopieren, Abdunkeln, Aufhellen**.
+- **Rechtsklick-Menü im Layerbaum**: aktiven Mischmodus auf die ausgewählten Ebenen/Gruppen anwenden oder den Originalzustand wiederherstellen (ab QGIS 3.32).
 - **Ursprüngliche Mischmodi werden gesichert** und beim Ausschalten exakt wiederhergestellt – kein Überschreiben bewusst gesetzter Modi.
 - **Projektbezogene Persistenz**: Der Ein/Aus-Zustand und der gewählte Modus überstehen Speichern, Schließen und erneutes Öffnen des Projekts.
+- Kompatibel mit dem Plugin **Plugin Reloader** (sauberes Neuladen).
 - Rückmeldungen über die QGIS-Meldungsleiste, Protokollierung im QGIS-Logfenster (Reiter `LayerMultiplyToggle`).
 
 ## Installation
@@ -68,6 +70,7 @@ Alternativ manuell: den Plugin-Ordner nach `…/QGIS3/profiles/default/python/pl
 3. Über den **Pfeil am Knopf** das Aufklapp-Menü öffnen, um den Mischmodus zu wählen. Bei aktivem Zustand wird der neue Modus sofort übernommen.
 4. Mit *Auf aktuelle Auswahl anwenden* lässt sich die Wirkung bei eingeschaltetem Zustand auf weitere markierte Ebenen ausdehnen.
 5. Erneuter Klick auf den Knopf stellt die ursprünglichen Mischmodi wieder her (Knopf „aus").
+6. Alternativ per **Rechtsklick** auf Ebenen/Gruppen im Layerbaum: Untermenü *Layer Multiply Toggle* mit *Apply …* (Mischmodus anwenden) und *Restore original blend mode* (zurücksetzen) für die Auswahl (ab QGIS 3.32).
 
 ## Die Mischmodi im Detail
 
@@ -105,8 +108,10 @@ In cartography, layers should often show through one another instead of hiding e
 - One-click toggle in the `geoObserverTools` toolbar (split button with dropdown menu).
 - Acts on **all** layers, or only the layers and groups **selected** in the layer tree (recursively, including subgroups).
 - Selectable blend mode: **Multiply, Screen, Overlay, Darken, Lighten**.
+- **Layer-tree right-click menu**: apply the active blend mode to, or restore the original for, the selected layers/groups (QGIS 3.32+).
 - **Original blend modes are captured** and restored exactly when toggling off, so deliberately set modes are not overwritten.
 - **Per-project persistence**: the on/off state and the chosen mode survive saving, closing and reopening the project.
+- Compatible with the **Plugin Reloader** plugin (clean reload).
 - Feedback via the QGIS message bar, logging in the QGIS log panel (tab `LayerMultiplyToggle`).
 
 ## Installation
@@ -123,6 +128,7 @@ Or manually: copy the plugin folder into `…/QGIS3/profiles/default/python/plug
 3. Use the **arrow next to the button** to open the dropdown and choose the blend mode. While active, the new mode is applied immediately.
 4. *Apply to current selection* extends the effect to additional selected layers while the toggle is on.
 5. Clicking the button again restores the original blend modes (button "off").
+6. Alternatively, **right-click** layers/groups in the layer tree: the *Layer Multiply Toggle* submenu offers *Apply …* (apply the blend mode) and *Restore original blend mode* for the selection (QGIS 3.32+).
 
 ## Blend modes in detail
 
@@ -148,6 +154,10 @@ Blend modes determine how a layer's colours are combined with the layers beneath
 ---
 
 ## Letzte Änderungen / Changelog
+
+### v0.4 (26.05.2026)
+- **DE:** Rechtsklick-Menü im Layerbaum: aktiven Mischmodus auf die ausgewählten Ebenen/Gruppen anwenden bzw. den Originalzustand wiederherstellen (ab QGIS 3.32). Kompatibilität mit dem Plugin Reloader (sauberes Neuladen). Robusteres Einlesen des projektbezogenen Zustands; vermeidet unnötige „Ungespeicherte Änderungen".
+- **EN:** Layer-tree right-click menu to apply the active blend mode to, or restore the original for, the selected layers/groups (QGIS 3.32+). Compatibility with the Plugin Reloader (clean reload). Hardened reading of per-project state; avoids spurious "unsaved changes".
 
 ### v0.3 (26.05.2026)
 - **DE:** Wählbare Mischmodi (Multiplizieren, Negativ multiplizieren, Ineinanderkopieren, Abdunkeln, Aufhellen) über ein Aufklapp-Menü. Ursprüngliche Mischmodi werden gesichert und wiederhergestellt. Zustand und Modus werden projektbezogen gespeichert. Werkzeugknopf als QAction-Splitbutton neu umgesetzt, Rückmeldung über die Meldungsleiste. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
