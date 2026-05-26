@@ -2,11 +2,11 @@
 name=Layer Multiply Toggle
 qgisMinimumVersion=3.0
 qgisMaximumVersion=4.99
-description=Switches the blending mode for all or selected layers and groups to "Multiply".
-version=0.2
+description=Toggle a blend mode (Multiply, Screen, Overlay, Darken, Lighten) for all or selected layers and groups with a single click.
+version=0.3
 author=Mike Elstermann (#geoObserver)
 email=news@geoobserver.de
-about=(24.02.2026) Adds a toolbar button to toggle the multiply blend mode for all layers or only selected layers/groups. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
+about=(26.05.2026) Adds a toolbar split-button that toggles a layer blend mode for all layers or only the selected layers/groups. The blend mode (Multiply, Screen, Overlay, Darken, Lighten) is chosen from a dropdown. Original blend modes are preserved and restored on toggling off, and the on/off state plus chosen mode are stored per project. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
 tracker=https://github.com/geoObserver/LayerMultiplyToggle/issues/
 repository=https://github.com/geoObserver/LayerMultiplyToggle/
 homepage=https://geoobserver.de/qgis-plugin-layermultiplytoggle/
@@ -14,7 +14,14 @@ category=Plugins
 icon=icons/multiply_layers_icon_active.png
 experimental=False
 deprecated=False
-tags=layer,blend mode,multiply,rendering
+tags=layer,blend mode,multiply,screen,overlay,rendering
 changelog=
     v0.1 - Initial release (23.02.2026)
     v0.2 - Minor corrections (24.02.2026)
+    v0.3 - (26.05.2026)
+           - Selectable blend modes (Multiply, Screen, Overlay, Darken, Lighten) via dropdown
+           - Original blend modes are now preserved and restored when toggling off
+           - On/off state and chosen mode are persisted per project
+           - Toolbar entry reworked as a themed QAction split-button
+           - User feedback via the QGIS message bar; logging via QgsMessageLog
+           - Fixes: toolbar leak on unload, removed ineffective group blend property
