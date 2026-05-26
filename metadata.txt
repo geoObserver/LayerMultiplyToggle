@@ -13,7 +13,7 @@ homepage=https://geoobserver.de/qgis-plugin-layermultiplytoggle/
 icon=icons/multiply_layers_icon_active.png
 experimental=False
 deprecated=False
-tags=layer,blend mode,multiply,rendering
+tags=layer,blend mode,multiply,rendering,hillshade,transparency,indicator
 changelog=
     v0.4 - (26.05.2026)
            - Preserves and exactly restores the original blend modes on toggling off
@@ -23,6 +23,8 @@ changelog=
            - Toolbar entry reworked as a themed QAction; message-bar feedback
            - Compatible with the Plugin Reloader plugin (clean reload)
            - Deliberately limited to the Multiply blend mode
+           - Robust indicator lifecycle: no leaks or orphan icons, Plugin-Reloader-safe
+           - Hardened reading of per-project state against corrupt/cross-version values
            - Fixes: toolbar leak on unload, removed ineffective group blend property
     v0.2 - Minor corrections (24.02.2026)
     v0.1 - Initial release (23.02.2026)

@@ -92,7 +92,7 @@ Der Mischmodus **Multiplizieren** multipliziert die Farben einer Ebene mit denen
 
 ## Kompatibilität
 
-- QGIS 3.x (Qt5) und QGIS 4.x (Qt6).
+- Minimum **QGIS 3.0**; getestet auf QGIS 3.x (Qt5) und QGIS 4.x (Qt6).
 
 ---
 
@@ -151,15 +151,15 @@ The **Multiply** blend mode multiplies a layer's colours with those beneath it �
 
 ## Compatibility
 
-- QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
+- Minimum **QGIS 3.0**; tested on QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
 
 ---
 
 ## Letzte Änderungen / Changelog
 
 ### v0.4 (26.05.2026)
-- **DE:** Sicherung und exakte Wiederherstellung der ursprünglichen Mischmodi beim Ausschalten. Projektbezogene Persistenz des Ein/Aus-Zustands. Anklickbares Multiply-Icon je Layer im Layerbaum (Multiplizieren pro Layer an/aus). Rechtsklick auf den Werkzeugknopf für vollständigen Reset. Werkzeugknopf als QAction neu umgesetzt, Rückmeldung über die Meldungsleiste. Kompatibilität mit dem Plugin Reloader. Bewusste Beschränkung auf den Modus **Multiplizieren**. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
-- **EN:** Captures and exactly restores the original blend modes on toggling off. Per-project persistence of the on/off state. Per-layer Multiply toggle in the layer tree via a clickable indicator icon. Right-click the toolbar button for a full reset. Toolbar button reworked as a QAction, feedback via the message bar. Plugin Reloader compatibility. Deliberately limited to the **Multiply** mode. Bug fixes (toolbar leak on unload, removed ineffective group property).
+- **DE:** Sicherung und exakte Wiederherstellung der ursprünglichen Mischmodi beim Ausschalten. Projektbezogene Persistenz des Ein/Aus-Zustands. Anklickbares Multiply-Icon je Layer im Layerbaum (Multiplizieren pro Layer an/aus). Rechtsklick auf den Werkzeugknopf für vollständigen Reset. Werkzeugknopf als QAction neu umgesetzt, Rückmeldung über die Meldungsleiste. Kompatibilität mit dem Plugin Reloader. Bewusste Beschränkung auf den Modus **Multiplizieren**. Robuster Indikator-Lebenszyklus (keine Leaks/Waisen-Icons, Plugin-Reloader-sicher), gehärtetes Einlesen des projektbezogenen Status. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
+- **EN:** Captures and exactly restores the original blend modes on toggling off. Per-project persistence of the on/off state. Per-layer Multiply toggle in the layer tree via a clickable indicator icon. Right-click the toolbar button for a full reset. Toolbar button reworked as a QAction, feedback via the message bar. Plugin Reloader compatibility. Deliberately limited to the **Multiply** mode. Robust indicator lifecycle (no leaks or orphan icons, Plugin-Reloader-safe), hardened reading of per-project state. Bug fixes (toolbar leak on unload, removed ineffective group property).
 
 ### v0.2 (24.02.2026)
 - **DE:** Kleinere Korrekturen. — **EN:** Minor corrections.
