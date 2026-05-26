@@ -50,7 +50,7 @@ In der Kartografie sollen sich Ebenen oft gegenseitig durchscheinen lassen, stat
 - Ein-Klick-Umschalter in der Werkzeugleiste `geoObserverTools`.
 - Wirkt auf **alle** Ebenen oder nur auf die im Layerbaum **ausgewählten** Ebenen und Gruppen (rekursiv inkl. Untergruppen).
 - Setzt den Mischmodus **Multiplizieren** – den in der Praxis nützlichsten Modus, um Ebenen durchscheinen zu lassen.
-- **Rechtsklick-Menü im Layerbaum**: Multiplizieren auf die ausgewählten Ebenen/Gruppen anwenden oder den Originalzustand wiederherstellen (ab QGIS 3.32).
+- **Anklickbares Multiply-Icon je Layer** im Layerbaum: schaltet Multiplizieren nur für diesen Layer ein/aus; das Icon zeigt den Zustand.
 - **Ursprüngliche Mischmodi werden gesichert** und beim Ausschalten exakt wiederhergestellt – kein Überschreiben bewusst gesetzter Modi.
 - **Projektbezogene Persistenz**: Der Ein/Aus-Zustand übersteht Speichern, Schließen und erneutes Öffnen des Projekts.
 - Kompatibel mit dem Plugin **Plugin Reloader** (sauberes Neuladen).
@@ -68,7 +68,7 @@ Alternativ manuell: den Plugin-Ordner nach `…/QGIS3/profiles/default/python/pl
 1. Optional im Layerbaum die gewünschten Ebenen/Gruppen markieren. Ohne Auswahl wirkt das Plugin auf alle Ebenen.
 2. In der Werkzeugleiste auf den **Layer-Multiply-Knopf** klicken: Multiplizieren wird gesetzt (Knopf „an").
 3. Erneuter Klick auf den Knopf stellt die ursprünglichen Mischmodi wieder her (Knopf „aus").
-4. Alternativ per **Rechtsklick** auf Ebenen/Gruppen im Layerbaum: Untermenü *Layer Multiply Toggle* mit *Apply multiply* (anwenden) und *Restore original blend mode* (zurücksetzen) für die Auswahl (ab QGIS 3.32).
+4. Alternativ pro Layer: im Layerbaum auf das **Multiply-Icon** rechts neben dem Layernamen klicken — schaltet Multiplizieren nur für diesen Layer um (das Icon zeigt an/aus).
 
 ## Was Multiplizieren bewirkt
 
@@ -107,7 +107,7 @@ In cartography, layers should often show through one another instead of hiding e
 - One-click toggle in the `geoObserverTools` toolbar.
 - Acts on **all** layers, or only the layers and groups **selected** in the layer tree (recursively, including subgroups).
 - Sets the **Multiply** blend mode – the most useful mode in practice for letting layers show through one another.
-- **Layer-tree right-click menu**: apply Multiply to, or restore the original for, the selected layers/groups (QGIS 3.32+).
+- **Per-layer toggle in the layer tree**: a clickable Multiply icon next to each layer turns Multiply on/off for that layer; the icon reflects the state.
 - **Original blend modes are captured** and restored exactly when toggling off, so deliberately set modes are not overwritten.
 - **Per-project persistence**: the on/off state survives saving, closing and reopening the project.
 - Compatible with the **Plugin Reloader** plugin (clean reload).
@@ -125,7 +125,7 @@ Or manually: copy the plugin folder into `…/QGIS3/profiles/default/python/plug
 1. Optionally select the desired layers/groups in the layer tree. With no selection, the plugin acts on all layers.
 2. Click the **Layer Multiply button** in the toolbar: Multiply is applied (button "on").
 3. Click the button again to restore the original blend modes (button "off").
-4. Alternatively, **right-click** layers/groups in the layer tree: the *Layer Multiply Toggle* submenu offers *Apply multiply* and *Restore original blend mode* for the selection (QGIS 3.32+).
+4. Alternatively, per layer: click the **Multiply icon** next to a layer name in the layer tree to toggle Multiply for that single layer (the icon shows on/off).
 
 ## What Multiply does
 
@@ -154,8 +154,8 @@ The **Multiply** blend mode multiplies a layer's colours with those beneath it �
 ## Letzte Änderungen / Changelog
 
 ### v0.4 (26.05.2026)
-- **DE:** Sicherung und exakte Wiederherstellung der ursprünglichen Mischmodi beim Ausschalten. Projektbezogene Persistenz des Ein/Aus-Zustands. Rechtsklick-Menü im Layerbaum (Multiplizieren anwenden / Original wiederherstellen, ab QGIS 3.32). Werkzeugknopf als QAction neu umgesetzt, Rückmeldung über die Meldungsleiste. Kompatibilität mit dem Plugin Reloader. Bewusste Beschränkung auf den Modus **Multiplizieren**. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
-- **EN:** Captures and exactly restores the original blend modes on toggling off. Per-project persistence of the on/off state. Layer-tree right-click menu (apply Multiply / restore original, QGIS 3.32+). Toolbar button reworked as a QAction, feedback via the message bar. Plugin Reloader compatibility. Deliberately limited to the **Multiply** mode. Bug fixes (toolbar leak on unload, removed ineffective group property).
+- **DE:** Sicherung und exakte Wiederherstellung der ursprünglichen Mischmodi beim Ausschalten. Projektbezogene Persistenz des Ein/Aus-Zustands. Anklickbares Multiply-Icon je Layer im Layerbaum (Multiplizieren pro Layer an/aus). Werkzeugknopf als QAction neu umgesetzt, Rückmeldung über die Meldungsleiste. Kompatibilität mit dem Plugin Reloader. Bewusste Beschränkung auf den Modus **Multiplizieren**. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
+- **EN:** Captures and exactly restores the original blend modes on toggling off. Per-project persistence of the on/off state. Per-layer Multiply toggle in the layer tree via a clickable indicator icon. Toolbar button reworked as a QAction, feedback via the message bar. Plugin Reloader compatibility. Deliberately limited to the **Multiply** mode. Bug fixes (toolbar leak on unload, removed ineffective group property).
 
 ### v0.2 (24.02.2026)
 - **DE:** Kleinere Korrekturen. — **EN:** Minor corrections.
