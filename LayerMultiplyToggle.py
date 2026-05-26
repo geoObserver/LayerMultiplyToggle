@@ -286,6 +286,8 @@ class LayerMultiplyToggle:
             if layer:
                 self._apply_to_layer(layer, mode)
                 count += 1
+        # Invariant: the toggle is "on" iff we currently hold saved layers.
+        self._reflect_state(bool(self.saved_blend_modes))
         self._save_state()
         self.iface.mapCanvas().refresh()
         self._notify(f"Multiply applied to {count} layer(s).")
@@ -302,6 +304,8 @@ class LayerMultiplyToggle:
                     layer.triggerRepaint()
                 del self.saved_blend_modes[layer_id]
                 count += 1
+        # Invariant: if nothing is left applied, the toggle must read "off".
+        self._reflect_state(bool(self.saved_blend_modes))
         self._save_state()
         self.iface.mapCanvas().refresh()
         self._notify(f"Original blend mode restored for {count} layer(s).")
