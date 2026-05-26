@@ -92,20 +92,12 @@ class LayerMultiplyToggle:
                 self.toolbar.deleteLater()
             self.toolbar = None
 
-    def get_composition_mode(self, mode):
-        """Returns the correct CompositionMode for Qt5 and Qt6."""
+    def _multiply_mode(self):
+        """Return the Multiply CompositionMode (Qt5/Qt6 compatible)."""
         try:
-            # Qt6 / QGIS 4.x
-            if mode == "multiply":
-                return QPainter.CompositionMode.CompositionMode_Multiply
-            else:
-                return QPainter.CompositionMode.CompositionMode_SourceOver
+            return QPainter.CompositionMode.CompositionMode_Multiply  # Qt6
         except AttributeError:
-            # Qt5 / QGIS 3.x
-            if mode == "multiply":
-                return QPainter.CompositionMode_Multiply
-            else:
-                return QPainter.CompositionMode_SourceOver
+            return QPainter.CompositionMode_Multiply  # Qt5
 
     def set_blend_mode(self, node, mode):
         """Recursively set blend mode for all layers and groups."""
@@ -147,7 +139,7 @@ class LayerMultiplyToggle:
 
         if checked:
             root = QgsProject.instance().layerTreeRoot()
-            multiply_mode = self.get_composition_mode("multiply")
+            multiply_mode = self._multiply_mode()
 
             # Selected layers/groups take precedence; otherwise the whole tree.
             selected_nodes = self.iface.layerTreeView().selectedNodes()
