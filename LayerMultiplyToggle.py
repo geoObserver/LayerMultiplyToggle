@@ -46,6 +46,7 @@ class LayerMultiplyToggle:
         self.toolbar = None
         self.action = None
         self.mode_group = None
+        self._ctx_connected = False
         # qualified QPainter.CompositionMode member name of the active mode
         self.active_mode_name = "CompositionMode_Multiply"
         # layer id -> blend mode captured when multiply was switched on
@@ -102,6 +103,15 @@ class LayerMultiplyToggle:
         QgsProject.instance().cleared.connect(self._restore_state)
         self._restore_state()
 
+        # Append entries to the layer-tree context menu (QGIS >= 3.32 only).
+        view = self.iface.layerTreeView()
+        if hasattr(view, "contextMenuAboutToShow"):
+            view.contextMenuAboutToShow.connect(self._extend_context_menu)
+            self._ctx_connected = True
+        else:
+            self._log("Layer-tree context menu needs QGIS >= 3.32; skipped.",
+                      Qgis.Warning)
+
         self._log("Multiply action ready in toolbar 'geoObserverTools'.")
 
     def unload(self):
@@ -111,6 +121,15 @@ class LayerMultiplyToggle:
             QgsProject.instance().cleared.disconnect(self._restore_state)
         except (TypeError, RuntimeError):
             pass
+
+        if self._ctx_connected:
+            try:
+                self.iface.layerTreeView().contextMenuAboutToShow.disconnect(
+                    self._extend_context_menu
+                )
+            except (TypeError, RuntimeError):
+                pass
+            self._ctx_connected = False
 
         # Detach our action from the toolbar so the empty-check below is valid.
         if self.toolbar is not None and self.action is not None:
@@ -283,6 +302,83 @@ class LayerMultiplyToggle:
         self._save_state()
         self.iface.mapCanvas().refresh()
         self._notify(f"Blend mode applied to {scope}.")
+
+    def _mode_label(self):
+        """Human-readable label of the currently active blend mode."""
+        for label, enum_name in self.BLEND_MODES:
+            if enum_name == self.active_mode_name:
+                return label
+        return "Multiply"
+
+    def _node_layer_ids(self, nodes):
+        """Collect the layer ids under the given layer-tree nodes (recursive)."""
+        ids = []
+
+        def walk(node):
+            if isinstance(node, QgsLayerTreeGroup):
+                for child in node.children():
+                    walk(child)
+            elif isinstance(node, QgsLayerTreeLayer):
+                layer = node.layer()
+                if layer:
+                    ids.append(layer.id())
+
+        for node in nodes:
+            walk(node)
+        return ids
+
+    def _extend_context_menu(self, menu):
+        """Append apply/restore entries to the layer-tree context menu."""
+        nodes = self.iface.layerTreeView().selectedNodes()
+        if not nodes:
+            return
+        # Resolve to layer ids now so the slots do not hold layer-tree node
+        # pointers that may be invalidated before the menu action is triggered.
+        layer_ids = self._node_layer_ids(nodes)
+        if not layer_ids:
+            return
+
+        menu.addSeparator()
+        sub = menu.addMenu("Layer Multiply Toggle")
+        apply_act = sub.addAction(f"Apply {self._mode_label()}")
+        apply_act.triggered.connect(
+            lambda checked=False, ids=layer_ids: self._ctx_apply(ids)
+        )
+        restore_act = sub.addAction("Restore original blend mode")
+        restore_act.setEnabled(any(i in self.saved_blend_modes for i in layer_ids))
+        restore_act.triggered.connect(
+            lambda checked=False, ids=layer_ids: self._ctx_restore(ids)
+        )
+
+    def _ctx_apply(self, layer_ids):
+        """Apply the active blend mode to the given layers (from context menu)."""
+        mode = self._composition_mode(self.active_mode_name)
+        project = QgsProject.instance()
+        count = 0
+        for layer_id in layer_ids:
+            layer = project.mapLayer(layer_id)
+            if layer:
+                self._apply_to_layer(layer, mode)
+                count += 1
+        self._save_state()
+        self.iface.mapCanvas().refresh()
+        self._notify(f"{self._mode_label()} applied to {count} layer(s).")
+
+    def _ctx_restore(self, layer_ids):
+        """Restore the original blend mode for the given layers (context menu)."""
+        project = QgsProject.instance()
+        count = 0
+        for layer_id in layer_ids:
+            if layer_id in self.saved_blend_modes:
+                layer = project.mapLayer(layer_id)
+                if layer:
+                    layer.setBlendMode(self._mode_from_int(self.saved_blend_modes[layer_id]))
+                    layer.triggerRepaint()
+                del self.saved_blend_modes[layer_id]
+                count += 1
+        self._save_state()
+        self.iface.mapCanvas().refresh()
+        self._notify(f"Original blend mode restored for {count} layer(s).")
 
     def _apply_multiply(self):
         """Apply multiply to the selected nodes, or the whole tree if none.
