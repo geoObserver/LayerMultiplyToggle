@@ -13,8 +13,11 @@
 
 import os
 from qgis.PyQt.QtGui import QPainter, QIcon
-from qgis.PyQt.QtWidgets import QPushButton, QToolBar
-from qgis.PyQt.QtCore import QSize
+from qgis.PyQt.QtWidgets import QToolBar
+try:
+    from qgis.PyQt.QtWidgets import QAction  # Qt5 / QGIS 3.x
+except ImportError:
+    from qgis.PyQt.QtGui import QAction  # Qt6 / QGIS 4.x
 from qgis.core import QgsProject, QgsLayerTreeGroup, QgsLayerTreeLayer
 
 
@@ -23,7 +26,6 @@ class LayerMultiplyToggle:
     def __init__(self, iface):
         self.iface = iface
         self.toolbar = None
-        self.button = None
         self.action = None
         # layer id -> blend mode captured when multiply was switched on
         self.saved_blend_modes = {}
@@ -46,41 +48,25 @@ class LayerMultiplyToggle:
         else:
             print("Toolbar 'geoObserverTools' found.")
 
-        # Create button
-        self.button = QPushButton()
-        self.button.setCheckable(True)
-        self.button.setIcon(QIcon(self.ICON_OFF))
-        self.button.setFixedSize(QSize(28, 28))
-        self.button.setIconSize(QSize(24, 24))
-        self.button.setStyleSheet("""
-            QPushButton {
-                border: 0px;
-                padding: 2px;
-                background-color: transparent;
-            }
-            QPushButton:hover {
-                background-color: rgba(128, 128, 128, 40);
-            }
-        """)
-        self.button.setToolTip("Multiply mode: OFF – click to activate")
-        self.button.toggled.connect(self.toggle_multiply)
+        # Create a checkable action; QToolBar renders it as a themed
+        # QToolButton that honours the QGIS icon size and dark/light theme.
+        self.action = QAction(QIcon(self.ICON_OFF), "Multiply blend mode",
+                              self.iface.mainWindow())
+        self.action.setCheckable(True)
+        self.action.setToolTip("Multiply mode: OFF – click to activate")
+        self.action.toggled.connect(self.toggle_multiply)
 
-        self.action = self.toolbar.addWidget(self.button)
+        self.toolbar.addAction(self.action)
         print("Multiply button ready in toolbar 'geoObserverTools'.")
 
     def unload(self):
         """Remove the plugin GUI on unload."""
-        # Remove our widget action first; deleteLater() alone does not
-        # detach the QWidgetAction that addWidget() registered on the toolbar.
+        # Detach our action from the toolbar so the empty-check below is valid.
         if self.toolbar is not None and self.action is not None:
             self.toolbar.removeAction(self.action)
         self.action = None
 
-        if self.button is not None:
-            self.button.deleteLater()
-            self.button = None
-
-        # Only remove toolbar if it is empty after removing our button
+        # Only remove toolbar if it is empty after removing our action
         if self.toolbar is not None:
             if len(self.toolbar.actions()) == 0:
                 self.iface.mainWindow().removeToolBar(self.toolbar)
@@ -134,11 +120,11 @@ class LayerMultiplyToggle:
     def toggle_multiply(self, checked):
         """Toggle multiply blend mode for selected or all layers."""
         if checked:
-            self.button.setIcon(QIcon(self.ICON_ON))
-            self.button.setToolTip("Multiply mode: ON – click to deactivate")
+            self.action.setIcon(QIcon(self.ICON_ON))
+            self.action.setToolTip("Multiply mode: ON – click to deactivate")
         else:
-            self.button.setIcon(QIcon(self.ICON_OFF))
-            self.button.setToolTip("Multiply mode: OFF – click to activate")
+            self.action.setIcon(QIcon(self.ICON_OFF))
+            self.action.setToolTip("Multiply mode: OFF – click to activate")
 
         if checked:
             root = QgsProject.instance().layerTreeRoot()
