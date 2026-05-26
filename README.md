@@ -5,9 +5,9 @@
 ![Version](https://img.shields.io/badge/version-0.4-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0-brightgreen)
 
-**DE** — Schaltet mit einem Klick einen Mischmodus (Multiplizieren, Negativ multiplizieren, Ineinanderkopieren, Abdunkeln, Aufhellen) für **alle** oder nur die **ausgewählten** Ebenen und Gruppen ein und wieder aus.
+**DE** — Schaltet mit einem Klick den Mischmodus **Multiplizieren** für **alle** oder nur die **ausgewählten** Ebenen und Gruppen ein und wieder aus.
 
-**EN** — Toggles a blend mode (Multiply, Screen, Overlay, Darken, Lighten) for **all** or only the **selected** layers and groups with a single click.
+**EN** — Toggles the **Multiply** blend mode for **all** or only the **selected** layers and groups with a single click.
 
 ![Layer Multiply Toggle in Aktion / in action](./QGIS_Plugin_LayerMultiplyToggle_Animation_1.gif)
 
@@ -20,7 +20,7 @@
   - [Funktionen](#funktionen)
   - [Installation](#installation)
   - [Verwendung](#verwendung)
-  - [Die Mischmodi im Detail](#die-mischmodi-im-detail)
+  - [Was Multiplizieren bewirkt](#was-multiplizieren-bewirkt)
   - [Verhalten und Persistenz](#verhalten-und-persistenz)
   - [Kompatibilität](#kompatibilität)
 - [English](#english)
@@ -28,7 +28,7 @@
   - [Features](#features)
   - [Installation](#installation-1)
   - [Usage](#usage)
-  - [Blend modes in detail](#blend-modes-in-detail)
+  - [What Multiply does](#what-multiply-does)
   - [Behaviour and persistence](#behaviour-and-persistence)
   - [Compatibility](#compatibility)
 - [Letzte Änderungen / Changelog](#letzte-änderungen--changelog)
@@ -47,12 +47,12 @@ In der Kartografie sollen sich Ebenen oft gegenseitig durchscheinen lassen, stat
 
 ## Funktionen
 
-- Ein-Klick-Umschalter in der Werkzeugleiste `geoObserverTools` (geteilter Knopf mit Aufklapp-Menü).
+- Ein-Klick-Umschalter in der Werkzeugleiste `geoObserverTools`.
 - Wirkt auf **alle** Ebenen oder nur auf die im Layerbaum **ausgewählten** Ebenen und Gruppen (rekursiv inkl. Untergruppen).
-- Auswählbarer Mischmodus: **Multiplizieren, Negativ multiplizieren, Ineinanderkopieren, Abdunkeln, Aufhellen**.
-- **Rechtsklick-Menü im Layerbaum**: aktiven Mischmodus auf die ausgewählten Ebenen/Gruppen anwenden oder den Originalzustand wiederherstellen (ab QGIS 3.32).
+- Setzt den Mischmodus **Multiplizieren** – den in der Praxis nützlichsten Modus, um Ebenen durchscheinen zu lassen.
+- **Rechtsklick-Menü im Layerbaum**: Multiplizieren auf die ausgewählten Ebenen/Gruppen anwenden oder den Originalzustand wiederherstellen (ab QGIS 3.32).
 - **Ursprüngliche Mischmodi werden gesichert** und beim Ausschalten exakt wiederhergestellt – kein Überschreiben bewusst gesetzter Modi.
-- **Projektbezogene Persistenz**: Der Ein/Aus-Zustand und der gewählte Modus überstehen Speichern, Schließen und erneutes Öffnen des Projekts.
+- **Projektbezogene Persistenz**: Der Ein/Aus-Zustand übersteht Speichern, Schließen und erneutes Öffnen des Projekts.
 - Kompatibel mit dem Plugin **Plugin Reloader** (sauberes Neuladen).
 - Rückmeldungen über die QGIS-Meldungsleiste, Protokollierung im QGIS-Logfenster (Reiter `LayerMultiplyToggle`).
 
@@ -66,28 +66,27 @@ Alternativ manuell: den Plugin-Ordner nach `…/QGIS3/profiles/default/python/pl
 ## Verwendung
 
 1. Optional im Layerbaum die gewünschten Ebenen/Gruppen markieren. Ohne Auswahl wirkt das Plugin auf alle Ebenen.
-2. In der Werkzeugleiste auf den **Layer-Multiply-Knopf** klicken: Der aktive Mischmodus wird gesetzt (Knopf „an").
-3. Über den **Pfeil am Knopf** das Aufklapp-Menü öffnen, um den Mischmodus zu wählen. Bei aktivem Zustand wird der neue Modus sofort übernommen.
-4. Mit *Auf aktuelle Auswahl anwenden* lässt sich die Wirkung bei eingeschaltetem Zustand auf weitere markierte Ebenen ausdehnen.
-5. Erneuter Klick auf den Knopf stellt die ursprünglichen Mischmodi wieder her (Knopf „aus").
-6. Alternativ per **Rechtsklick** auf Ebenen/Gruppen im Layerbaum: Untermenü *Layer Multiply Toggle* mit *Apply …* (Mischmodus anwenden) und *Restore original blend mode* (zurücksetzen) für die Auswahl (ab QGIS 3.32).
+2. In der Werkzeugleiste auf den **Layer-Multiply-Knopf** klicken: Multiplizieren wird gesetzt (Knopf „an").
+3. Erneuter Klick auf den Knopf stellt die ursprünglichen Mischmodi wieder her (Knopf „aus").
+4. Alternativ per **Rechtsklick** auf Ebenen/Gruppen im Layerbaum: Untermenü *Layer Multiply Toggle* mit *Apply multiply* (anwenden) und *Restore original blend mode* (zurücksetzen) für die Auswahl (ab QGIS 3.32).
 
-## Die Mischmodi im Detail
+## Was Multiplizieren bewirkt
 
-Mischmodi bestimmen, wie die Farben einer Ebene mit den darunterliegenden verrechnet werden.
+Der Mischmodus **Multiplizieren** multipliziert die Farben einer Ebene mit denen der darunterliegenden – das Ergebnis ist stets **dunkler**. Weiß ist dabei wirkungslos (neutral), Schwarz bleibt schwarz. Praktisch legt sich die obere Ebene wie eine Lasur über die untere, statt sie zu verdecken.
 
-| Modus | Wirkung | Typischer Einsatz |
-|-------|---------|-------------------|
-| **Multiplizieren** | Multipliziert die Farben; das Ergebnis ist stets **dunkler**. Weiß bleibt wirkungslos, Schwarz bleibt schwarz. | Der Klassiker: Schummerung/Relief über Landnutzung legen, Schraffuren oder ALKIS-Linien über ein Luftbild – der Untergrund bleibt sichtbar. |
-| **Negativ multiplizieren** (Screen) | Gegenstück zu Multiplizieren; das Ergebnis ist stets **heller**. | Aufhellen dunkler Hintergründe, Licht-/Dunst-Effekte, Leuchten. |
-| **Ineinanderkopieren** (Overlay) | Kombiniert Multiplizieren und Negativ multiplizieren: dunkelt Dunkles ab, hellt Helles auf – **mehr Kontrast** und Sättigung. | Textur und Relief betonen, ohne die Mitteltöne zu verlieren. |
-| **Abdunkeln** (Darken) | Behält je Pixel den **dunkleren** der beiden Farbwerte. | Nur dunklere Strukturen (z. B. dunkle Linien) sollen durchscheinen. |
-| **Aufhellen** (Lighten) | Behält je Pixel den **helleren** der beiden Farbwerte. | Nur hellere Strukturen sollen durchscheinen. |
+| Bereich der oberen Ebene | Wirkung auf den Untergrund |
+|--------------------------|----------------------------|
+| **Helle Bereiche** (Richtung Weiß) | bleiben weitgehend durchsichtig – der Untergrund scheint durch |
+| **Dunkle Bereiche** (Richtung Schwarz) | dunkeln den Untergrund sichtbar ab |
+
+**Typischer Einsatz:** Schummerung/Relief über Landnutzung legen, Schraffuren oder ALKIS-Linien über ein Luftbild – der Untergrund bleibt lesbar.
+
+> Hinweis: Andere Mischmodi (Negativ multiplizieren, Ineinanderkopieren, Abdunkeln, Aufhellen) wirken stark von Daten und Stapelreihenfolge abhängig und blieben im Test oft ohne sichtbaren Unterschied. Das Plugin beschränkt sich daher bewusst auf **Multiplizieren**; alle übrigen Modi lassen sich bei Bedarf weiterhin manuell über die Layereigenschaften setzen.
 
 ## Verhalten und Persistenz
 
 - Beim Einschalten merkt sich das Plugin pro Ebene den **vorherigen** Mischmodus (nur beim ersten Mal je Ebene). Beim Ausschalten wird genau dieser Zustand wiederhergestellt – unabhängig von der aktuellen Auswahl.
-- Zustand (an/aus), gewählter Modus und die gesicherten Originalwerte werden **im QGIS-Projekt** gespeichert. Nach erneutem Öffnen spiegelt der Knopf den gespeicherten Zustand wider, ohne den Mischmodus erneut anzuwenden (die Ebenen tragen ihn bereits aus der Projektdatei).
+- Der Ein/Aus-Zustand und die gesicherten Originalwerte werden **im QGIS-Projekt** gespeichert. Nach erneutem Öffnen spiegelt der Knopf den gespeicherten Zustand wider, ohne Multiplizieren erneut anzuwenden (die Ebenen tragen den Modus bereits aus der Projektdatei).
 
 ## Kompatibilität
 
@@ -105,12 +104,12 @@ In cartography, layers should often show through one another instead of hiding e
 
 ## Features
 
-- One-click toggle in the `geoObserverTools` toolbar (split button with dropdown menu).
+- One-click toggle in the `geoObserverTools` toolbar.
 - Acts on **all** layers, or only the layers and groups **selected** in the layer tree (recursively, including subgroups).
-- Selectable blend mode: **Multiply, Screen, Overlay, Darken, Lighten**.
-- **Layer-tree right-click menu**: apply the active blend mode to, or restore the original for, the selected layers/groups (QGIS 3.32+).
+- Sets the **Multiply** blend mode – the most useful mode in practice for letting layers show through one another.
+- **Layer-tree right-click menu**: apply Multiply to, or restore the original for, the selected layers/groups (QGIS 3.32+).
 - **Original blend modes are captured** and restored exactly when toggling off, so deliberately set modes are not overwritten.
-- **Per-project persistence**: the on/off state and the chosen mode survive saving, closing and reopening the project.
+- **Per-project persistence**: the on/off state survives saving, closing and reopening the project.
 - Compatible with the **Plugin Reloader** plugin (clean reload).
 - Feedback via the QGIS message bar, logging in the QGIS log panel (tab `LayerMultiplyToggle`).
 
@@ -124,28 +123,27 @@ Or manually: copy the plugin folder into `…/QGIS3/profiles/default/python/plug
 ## Usage
 
 1. Optionally select the desired layers/groups in the layer tree. With no selection, the plugin acts on all layers.
-2. Click the **Layer Multiply button** in the toolbar: the active blend mode is applied (button "on").
-3. Use the **arrow next to the button** to open the dropdown and choose the blend mode. While active, the new mode is applied immediately.
-4. *Apply to current selection* extends the effect to additional selected layers while the toggle is on.
-5. Clicking the button again restores the original blend modes (button "off").
-6. Alternatively, **right-click** layers/groups in the layer tree: the *Layer Multiply Toggle* submenu offers *Apply …* (apply the blend mode) and *Restore original blend mode* for the selection (QGIS 3.32+).
+2. Click the **Layer Multiply button** in the toolbar: Multiply is applied (button "on").
+3. Click the button again to restore the original blend modes (button "off").
+4. Alternatively, **right-click** layers/groups in the layer tree: the *Layer Multiply Toggle* submenu offers *Apply multiply* and *Restore original blend mode* for the selection (QGIS 3.32+).
 
-## Blend modes in detail
+## What Multiply does
 
-Blend modes determine how a layer's colours are combined with the layers beneath it.
+The **Multiply** blend mode multiplies a layer's colours with those beneath it – the result is always **darker**. White is neutral (no effect), black stays black. In practice the upper layer acts like a glaze over the lower one instead of hiding it.
 
-| Mode | Effect | Typical use |
-|------|--------|-------------|
-| **Multiply** | Multiplies the colours; the result is always **darker**. White has no effect, black stays black. | The classic: place hillshade/relief over land use, hatching or cadastral lines over an aerial image while keeping the background visible. |
-| **Screen** | The opposite of Multiply; the result is always **lighter**. | Lightening dark backgrounds, haze/glow effects. |
-| **Overlay** | Combines Multiply and Screen: darkens darks, lightens lights — **more contrast** and saturation. | Emphasise texture and relief without losing the midtones. |
-| **Darken** | Keeps the **darker** of the two colour values per pixel. | Let only darker features (e.g. dark linework) show through. |
-| **Lighten** | Keeps the **lighter** of the two colour values per pixel. | Let only lighter features show through. |
+| Area of the upper layer | Effect on the background |
+|-------------------------|--------------------------|
+| **Light areas** (towards white) | stay largely transparent – the background shows through |
+| **Dark areas** (towards black) | visibly darken the background |
+
+**Typical use:** place hillshade/relief over land use, hatching or cadastral lines over an aerial image while keeping the background readable.
+
+> Note: other blend modes (Screen, Overlay, Darken, Lighten) depend heavily on the data and stacking order and often showed no visible difference in testing. The plugin therefore deliberately focuses on **Multiply**; all other modes remain available manually via the layer properties.
 
 ## Behaviour and persistence
 
 - On enable, the plugin remembers each layer's **previous** blend mode (only the first time per layer). On disable it restores exactly that state, regardless of the current selection.
-- State (on/off), the chosen mode and the captured originals are stored **in the QGIS project**. After reopening, the button mirrors the stored state without re-applying the blend mode (the layers already carry it from the project file).
+- The on/off state and the captured originals are stored **in the QGIS project**. After reopening, the button mirrors the stored state without re-applying Multiply (the layers already carry it from the project file).
 
 ## Compatibility
 
@@ -156,12 +154,8 @@ Blend modes determine how a layer's colours are combined with the layers beneath
 ## Letzte Änderungen / Changelog
 
 ### v0.4 (26.05.2026)
-- **DE:** Rechtsklick-Menü im Layerbaum: aktiven Mischmodus auf die ausgewählten Ebenen/Gruppen anwenden bzw. den Originalzustand wiederherstellen (ab QGIS 3.32). Kompatibilität mit dem Plugin Reloader (sauberes Neuladen). Robusteres Einlesen des projektbezogenen Zustands; vermeidet unnötige „Ungespeicherte Änderungen".
-- **EN:** Layer-tree right-click menu to apply the active blend mode to, or restore the original for, the selected layers/groups (QGIS 3.32+). Compatibility with the Plugin Reloader (clean reload). Hardened reading of per-project state; avoids spurious "unsaved changes".
-
-### v0.3 (26.05.2026)
-- **DE:** Wählbare Mischmodi (Multiplizieren, Negativ multiplizieren, Ineinanderkopieren, Abdunkeln, Aufhellen) über ein Aufklapp-Menü. Ursprüngliche Mischmodi werden gesichert und wiederhergestellt. Zustand und Modus werden projektbezogen gespeichert. Werkzeugknopf als QAction-Splitbutton neu umgesetzt, Rückmeldung über die Meldungsleiste. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
-- **EN:** Selectable blend modes (Multiply, Screen, Overlay, Darken, Lighten) via a dropdown. Original blend modes are preserved and restored. State and mode are persisted per project. Toolbar button reworked as a QAction split button, feedback via the message bar. Bug fixes (toolbar leak on unload, removed ineffective group property).
+- **DE:** Sicherung und exakte Wiederherstellung der ursprünglichen Mischmodi beim Ausschalten. Projektbezogene Persistenz des Ein/Aus-Zustands. Rechtsklick-Menü im Layerbaum (Multiplizieren anwenden / Original wiederherstellen, ab QGIS 3.32). Werkzeugknopf als QAction neu umgesetzt, Rückmeldung über die Meldungsleiste. Kompatibilität mit dem Plugin Reloader. Bewusste Beschränkung auf den Modus **Multiplizieren**. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
+- **EN:** Captures and exactly restores the original blend modes on toggling off. Per-project persistence of the on/off state. Layer-tree right-click menu (apply Multiply / restore original, QGIS 3.32+). Toolbar button reworked as a QAction, feedback via the message bar. Plugin Reloader compatibility. Deliberately limited to the **Multiply** mode. Bug fixes (toolbar leak on unload, removed ineffective group property).
 
 ### v0.2 (24.02.2026)
 - **DE:** Kleinere Korrekturen. — **EN:** Minor corrections.
