@@ -43,7 +43,7 @@
 
 In der Kartografie sollen sich Ebenen oft gegenseitig durchscheinen lassen, statt sich zu verdecken: ein Schummerungs- oder Reliefraster über der Landnutzung, Schraffuren über einem Luftbild, ALKIS-Linien über einer Hintergrundkarte. Der dafür passende Mischmodus liegt in QGIS tief in den *Layereigenschaften → Symbolisierung → Layer-Rendering → Mischmodus* – und muss für jede Ebene einzeln gesetzt werden.
 
-**Layer Multiply Toggle** macht daraus einen einzigen Klick in der Werkzeugleiste: Der gewählte Mischmodus wird auf einen Schlag für alle oder die ausgewählten Ebenen/Gruppen gesetzt und beim erneuten Klick wieder zurückgenommen – ohne die ursprünglichen Einstellungen zu verlieren.
+**Layer Multiply Toggle** macht daraus einen einzigen Klick in der Werkzeugleiste: Der Mischmodus **Multiplizieren** wird auf einen Schlag für alle oder die ausgewählten Ebenen/Gruppen gesetzt und beim erneuten Klick wieder zurückgenommen – ohne die ursprünglichen Einstellungen zu verlieren.
 
 ## Funktionen
 
@@ -100,7 +100,7 @@ Der Mischmodus **Multiplizieren** multipliziert die Farben einer Ebene mit denen
 
 In cartography, layers should often show through one another instead of hiding each other: a hillshade or relief raster over land use, hatching over an aerial image, cadastral lines over a basemap. The blend mode for this lives deep inside *Layer Properties → Symbology → Layer Rendering → Blending mode* in QGIS, and has to be set for each layer individually.
 
-**Layer Multiply Toggle** turns this into a single toolbar click: the chosen blend mode is applied at once to all or the selected layers/groups, and removed again on the next click, without losing the original settings.
+**Layer Multiply Toggle** turns this into a single toolbar click: the **Multiply** blend mode is applied at once to all or the selected layers/groups, and removed again on the next click, without losing the original settings.
 
 ## Features
 
