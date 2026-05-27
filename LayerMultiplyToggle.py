@@ -26,6 +26,7 @@ from qgis.core import (
     QgsLayerTreeGroup,
     QgsLayerTreeLayer,
     QgsMessageLog,
+    QgsSettings,
 )
 from qgis.gui import QgsLayerTreeViewIndicator
 
@@ -34,6 +35,8 @@ LOG_TAG = "LayerMultiplyToggle"
 # the C++ object, so it survives plugin reloads and lets a fresh plugin
 # instance recognise (and clean up) icons left by a previous instance.
 INDICATOR_OWNED_PROP = "layerMultiplyToggleOwned"
+# QgsSettings key for the user's "show per-layer icons" preference (global).
+SETTINGS_ICONS_VISIBLE = f"{LOG_TAG}/indicators_visible"
 
 
 class LayerMultiplyToggle:
@@ -47,6 +50,10 @@ class LayerMultiplyToggle:
         self._model_connected = False
         # while False (after a reset) no per-layer indicators are shown
         self._indicators_enabled = True
+        # user preference (persisted globally): show the per-layer icons at all
+        self._indicators_visible = QgsSettings().value(
+            SETTINGS_ICONS_VISIBLE, True, type=bool
+        )
         # layer id -> blend mode (int) captured when multiply was switched on
         self.saved_blend_modes = {}
         # layer id -> QgsLayerTreeViewIndicator currently shown in the tree
@@ -90,11 +97,11 @@ class LayerMultiplyToggle:
         self.action.toggled.connect(self.toggle_multiply)
         self.toolbar.addAction(self.action)
 
-        # Right-click on the toolbar button opens a small reset menu.
+        # Right-click on the toolbar button opens a small options menu.
         button = self.toolbar.widgetForAction(self.action)
         if button is not None:
             button.setContextMenuPolicy(self._custom_ctx_policy())
-            button.customContextMenuRequested.connect(self._show_reset_menu)
+            button.customContextMenuRequested.connect(self._show_tool_menu)
 
         # Keep the action in sync with the active project's persisted state.
         project = QgsProject.instance()
@@ -333,7 +340,9 @@ class LayerMultiplyToggle:
         """
         # self.action is None after unload; a QTimer.singleShot refresh that was
         # queued just before unload must not re-add indicators on a dead instance.
-        if not self._indicators_enabled or self.action is None:
+        # _indicators_visible is the user's master on/off switch for the icons.
+        if (self.action is None or not self._indicators_enabled
+                or not self._indicators_visible):
             return
         view = self.iface.layerTreeView()
         root = QgsProject.instance().layerTreeRoot()
@@ -447,18 +456,37 @@ class LayerMultiplyToggle:
         except AttributeError:
             return Qt.CustomContextMenu  # older PyQt5
 
-    def _show_reset_menu(self, pos):
-        """Right-click menu on the toolbar button: offer a full reset."""
+    def _show_tool_menu(self, pos):
+        """Right-click menu on the toolbar button: toggle icons + full reset."""
         button = self.toolbar.widgetForAction(self.action) if self.toolbar else None
         menu = QMenu(self.iface.mainWindow())
-        act = menu.addAction("Reset: undo all changes and remove icons")
-        act.triggered.connect(self._reset_all)
+        show_act = menu.addAction("Show layer icons")
+        show_act.setCheckable(True)
+        show_act.setChecked(self._indicators_visible)
+        show_act.toggled.connect(self._set_indicators_visible)
+        menu.addSeparator()
+        reset_act = menu.addAction("Reset: undo all changes and remove icons")
+        reset_act.triggered.connect(self._reset_all)
         anchor = button if button is not None else self.iface.mainWindow()
         global_pos = anchor.mapToGlobal(pos)
         (menu.exec if hasattr(menu, "exec") else menu.exec_)(global_pos)
         # The menu is parented to the main window; free it so right-clicks
         # don't accumulate QMenu objects.
         menu.deleteLater()
+
+    def _set_indicators_visible(self, visible):
+        """Show or hide the per-layer icons and persist the choice globally."""
+        self._indicators_visible = bool(visible)
+        QgsSettings().setValue(SETTINGS_ICONS_VISIBLE, self._indicators_visible)
+        if self._indicators_visible:
+            # An explicit "show" also lifts a reset's suspension, so the icons
+            # reappear immediately instead of waiting for the next activation.
+            self._indicators_enabled = True
+            self._refresh_indicators()
+            self._notify("Layer icons shown.")
+        else:
+            self._clear_indicators()
+            self._notify("Layer icons hidden.")
 
     def _reset_all(self, *args):
         """Undo everything the plugin did and return to a clean state.

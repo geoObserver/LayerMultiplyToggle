@@ -53,7 +53,7 @@ In der Kartografie sollen sich Ebenen oft gegenseitig durchscheinen lassen, stat
 - **Anklickbares Multiply-Icon je Layer** im Layerbaum: schaltet Multiplizieren nur für diesen Layer ein/aus; das Icon zeigt den Zustand.
 - **Ursprüngliche Mischmodi werden gesichert** und beim Ausschalten exakt wiederhergestellt – kein Überschreiben bewusst gesetzter Modi.
 - **Projektbezogene Persistenz**: Der Ein/Aus-Zustand übersteht Speichern, Schließen und erneutes Öffnen des Projekts.
-- **Rechtsklick auf den Werkzeugknopf = Reset**: stellt alle ursprünglichen Mischmodi wieder her, entfernt alle Plugin-Icons aus dem Layerbaum, löscht den gespeicherten Status und schaltet den Toggle auf „aus".
+- **Rechtsklick auf den Werkzeugknopf = Menü**: *Show layer icons* (ein-/ausschaltbar, global gespeichert) blendet die Icons im Layerbaum bei Bedarf aus, ohne die Funktion zu beeinflussen; *Reset* stellt alle ursprünglichen Mischmodi wieder her, entfernt alle Plugin-Icons aus dem Layerbaum, löscht den gespeicherten Status und schaltet den Toggle auf „aus".
 - Kompatibel mit dem Plugin **Plugin Reloader** (sauberes Neuladen).
 - Rückmeldungen über die QGIS-Meldungsleiste, Protokollierung im QGIS-Logfenster (Reiter `LayerMultiplyToggle`).
 
@@ -70,7 +70,7 @@ Alternativ manuell: den Plugin-Ordner nach `…/QGIS3/profiles/default/python/pl
 2. In der Werkzeugleiste auf den **Layer-Multiply-Knopf** klicken: Multiplizieren wird gesetzt (Knopf „an").
 3. Erneuter Klick auf den Knopf stellt die ursprünglichen Mischmodi wieder her (Knopf „aus").
 4. Alternativ pro Layer: im Layerbaum auf das **Multiply-Icon** rechts neben dem Layernamen klicken — schaltet Multiplizieren nur für diesen Layer um (das Icon zeigt an/aus).
-5. **Rechtsklick auf den Werkzeugknopf** öffnet ein kleines Menü *Reset* — setzt alles zurück (Original-Mischmodi wiederhergestellt, alle Layerbaum-Icons entfernt, Status gelöscht, Toggle „aus").
+5. **Rechtsklick auf den Werkzeugknopf** öffnet ein kleines Menü: *Show layer icons* schaltet die Anzeige der Layerbaum-Icons ein/aus (global gespeichert, beeinflusst die Funktion nicht); *Reset* setzt alles zurück (Original-Mischmodi wiederhergestellt, alle Layerbaum-Icons entfernt, Status gelöscht, Toggle „aus").
 
 ## Was Multiplizieren bewirkt
 
@@ -112,7 +112,7 @@ In cartography, layers should often show through one another instead of hiding e
 - **Per-layer toggle in the layer tree**: a clickable Multiply icon next to each layer turns Multiply on/off for that layer; the icon reflects the state.
 - **Original blend modes are captured** and restored exactly when toggling off, so deliberately set modes are not overwritten.
 - **Per-project persistence**: the on/off state survives saving, closing and reopening the project.
-- **Right-click the toolbar button = reset**: restores every layer's original blend mode, removes all plugin icons from the layer tree, clears the stored state and switches the toggle off.
+- **Right-click the toolbar button = menu**: *Show layer icons* (toggle, stored globally) hides the layer-tree icons on demand without affecting the function; *Reset* restores every layer's original blend mode, removes all plugin icons from the layer tree, clears the stored state and switches the toggle off.
 - Compatible with the **Plugin Reloader** plugin (clean reload).
 - Feedback via the QGIS message bar, logging in the QGIS log panel (tab `LayerMultiplyToggle`).
 
@@ -129,7 +129,7 @@ Or manually: copy the plugin folder into `…/QGIS3/profiles/default/python/plug
 2. Click the **Layer Multiply button** in the toolbar: Multiply is applied (button "on").
 3. Click the button again to restore the original blend modes (button "off").
 4. Alternatively, per layer: click the **Multiply icon** next to a layer name in the layer tree to toggle Multiply for that single layer (the icon shows on/off).
-5. **Right-click the toolbar button** opens a small *Reset* menu — undoes everything (original blend modes restored, all layer-tree icons removed, stored state cleared, toggle off).
+5. **Right-click the toolbar button** opens a small menu: *Show layer icons* toggles the display of the layer-tree icons (stored globally, does not affect the function); *Reset* undoes everything (original blend modes restored, all layer-tree icons removed, stored state cleared, toggle off).
 
 ## What Multiply does
 
