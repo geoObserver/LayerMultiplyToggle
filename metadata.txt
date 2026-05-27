@@ -3,7 +3,7 @@ name=Layer Multiply Toggle
 qgisMinimumVersion=3.0
 qgisMaximumVersion=4.99
 description=Toggle the Multiply blend mode for all or selected layers and groups with a single click.
-version=0.5
+version=0.5.1
 author=Mike Elstermann (#geoObserver)
 email=news@geoobserver.de
 about=(27.05.2026) Adds a toolbar button that toggles the Multiply blend mode for all layers or only the selected layers/groups. A clickable Multiply icon next to each layer in the layer tree toggles Multiply per layer. A dropdown menu on the toolbar button lets you show/hide the layer-tree icons on demand and reset everything (restore originals, remove icons, toggle off). Original blend modes are preserved and restored on toggling off, and the on/off state is stored per project. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
@@ -15,6 +15,8 @@ experimental=False
 deprecated=False
 tags=layer,blend mode,multiply,rendering,hillshade,transparency,indicator
 changelog=
+    v0.5.1 - (27.05.2026)
+           - Fix: hiding/resetting the layer icons did not repaint immediately on macOS/Qt6 (QGIS 4); icons lingered until the menu was reopened
     v0.5 - (27.05.2026)
            - Show/hide the per-layer icons on demand via a dropdown menu on the toolbar button (global setting)
            - Options moved from a right-click menu to the toolbar button's dropdown arrow (Show layer icons / Reset)

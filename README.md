@@ -2,7 +2,7 @@
 
 ![QGIS](https://img.shields.io/badge/QGIS-3.x%20%7C%204.x-589632?logo=qgis&logoColor=white)
 ![Qt](https://img.shields.io/badge/Qt-5%20%7C%206-41cd52?logo=qt&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.5-blue)
+![Version](https://img.shields.io/badge/version-0.5.1-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0-brightgreen)
 
 **DE** — Schaltet mit einem Klick den Mischmodus **Multiplizieren** für **alle** oder nur die **ausgewählten** Ebenen und Gruppen ein und wieder aus.
@@ -156,6 +156,10 @@ The **Multiply** blend mode multiplies a layer's colours with those beneath it �
 ---
 
 ## Letzte Änderungen / Changelog
+
+### v0.5.1 (27.05.2026)
+- **DE:** Fehlerbehebung: Das Aus-/Zurücksetzen der Layerbaum-Icons wurde auf macOS/Qt6 (QGIS 4) nicht sofort neu gezeichnet – die Icons blieben sichtbar, bis das Menü erneut geöffnet wurde.
+- **EN:** Fix: hiding/resetting the layer-tree icons did not repaint immediately on macOS/Qt6 (QGIS 4) — the icons lingered until the menu was reopened.
 
 ### v0.5 (27.05.2026)
 - **DE:** Layerbaum-Icons bei Bedarf ein-/ausblenden über ein Dropdown-Menü am Werkzeugknopf (global gespeichert). Optionen vom Rechtsklick-Menü in das Dropdown am Werkzeugknopf verschoben (*Show layer icons* / *Reset*). Fehlerbehebungen: doppelte Icons nach dem (Neu-)Laden von WMS-/Vektor-Layern; *Reset / alle Icons entfernen* räumt jetzt jedes Icon ab – auch über Plugin-Reloads hinweg (Marker-Property als Identität) – und die Icons kommen danach zuverlässig zurück. Robusterer Indikator-Lebenszyklus und Menüzustand (keine baumelnden Zeiger; die Checkbox spiegelt die tatsächliche Sichtbarkeit).
