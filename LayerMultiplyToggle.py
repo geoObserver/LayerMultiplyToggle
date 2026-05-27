@@ -53,10 +53,15 @@ class LayerMultiplyToggle:
         self._model_connected = False
         # while False (after a reset) no per-layer indicators are shown
         self._indicators_enabled = True
-        # user preference (persisted globally): show the per-layer icons at all
-        self._indicators_visible = QgsSettings().value(
-            SETTINGS_ICONS_VISIBLE, True, type=bool
-        )
+        # user preference (persisted globally): show the per-layer icons at all.
+        # Guard the read so a corrupt/foreign stored value can never abort the
+        # plugin's construction over a mere display preference.
+        try:
+            self._indicators_visible = QgsSettings().value(
+                SETTINGS_ICONS_VISIBLE, True, type=bool
+            )
+        except (TypeError, ValueError):
+            self._indicators_visible = True
         # layer id -> blend mode (int) captured when multiply was switched on
         self.saved_blend_modes = {}
         # layer id -> QgsLayerTreeViewIndicator currently shown in the tree
@@ -108,6 +113,11 @@ class LayerMultiplyToggle:
             self.menu = self._build_tool_menu()
             tool_button.setMenu(self.menu)
             tool_button.setPopupMode(self._menu_popup_mode())
+        else:
+            self._log(
+                "Toolbar widget is not a QToolButton; the options menu "
+                "(show icons / reset) is unavailable.", Qgis.Warning
+            )
 
         # Keep the action in sync with the active project's persisted state.
         project = QgsProject.instance()
@@ -389,6 +399,12 @@ class LayerMultiplyToggle:
             if keep is not None:
                 self._set_indicator_state(keep, active)
             else:
+                # If tracked is not None here it is a stale indicator on a node
+                # whose pointer changed (e.g. a layer moved within the tree): we
+                # cannot removeIndicator it (no live node to detach from) and
+                # must not deleteLater it (its pointer still sits in the view's
+                # map and would dangle on reuse). It is reclaimed by the marker
+                # purge above once its old pointer is reused.
                 ind = self._make_indicator(view, lid)
                 self._set_indicator_state(ind, active)
                 view.addIndicator(node, ind)
@@ -480,20 +496,37 @@ class LayerMultiplyToggle:
         menu.setSeparatorsCollapsible(False)
         self._show_icons_action = menu.addAction("Show layer icons")
         self._show_icons_action.setCheckable(True)
-        self._show_icons_action.setChecked(self._indicators_visible)
-        # connect AFTER setChecked so seeding the state does not fire the slot
         self._show_icons_action.toggled.connect(self._set_indicators_visible)
         menu.addSeparator()
         reset_act = menu.addAction("Reset: undo all changes and remove icons")
         reset_act.triggered.connect(self._reset_all)
+        # Keep the checkbox honest: it must show whether icons are *currently*
+        # visible, which after a Reset is "no" even though the stored preference
+        # is still "show". Re-sync each time the menu opens so a single click
+        # always flips the visible state (no confusing no-op first click).
+        menu.aboutToShow.connect(self._sync_menu)
+        self._sync_menu()
         return menu
+
+    def _sync_menu(self):
+        """Reflect the effective icon visibility in the menu checkbox.
+
+        Effective = the user preference AND not suspended by a reset. Guarded
+        with blockSignals so seeding the check state never re-fires the toggle.
+        """
+        if self._show_icons_action is None:
+            return
+        shown = self._indicators_visible and self._indicators_enabled
+        self._show_icons_action.blockSignals(True)
+        self._show_icons_action.setChecked(shown)
+        self._show_icons_action.blockSignals(False)
 
     def _set_indicators_visible(self, visible):
         """Show or hide the per-layer icons and persist the choice globally.
 
-        The layer-tree icons switch instantly: showing rebuilds them right away
-        and hiding strips them, then we repaint the tree viewport so the change
-        is visible without waiting for the next model refresh.
+        The icons switch instantly: _refresh_indicators (via addIndicator) and
+        _clear_indicators (via removeIndicator) repaint the affected tree rows
+        themselves, so no extra viewport repaint is needed here.
         """
         self._indicators_visible = bool(visible)
         QgsSettings().setValue(SETTINGS_ICONS_VISIBLE, self._indicators_visible)
@@ -502,14 +535,10 @@ class LayerMultiplyToggle:
             # reappear immediately instead of waiting for the next activation.
             self._indicators_enabled = True
             self._refresh_indicators()
-            message = "Layer icons shown."
+            self._notify("Layer icons shown.")
         else:
             self._clear_indicators()
-            message = "Layer icons hidden."
-        view = self.iface.layerTreeView()
-        if view is not None and view.viewport() is not None:
-            view.viewport().update()
-        self._notify(message)
+            self._notify("Layer icons hidden.")
 
     def _reset_all(self, *args):
         """Undo everything the plugin did and return to a clean state.
