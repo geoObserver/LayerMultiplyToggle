@@ -30,6 +30,10 @@ from qgis.core import (
 from qgis.gui import QgsLayerTreeViewIndicator
 
 LOG_TAG = "LayerMultiplyToggle"
+# Dynamic QObject property stamped on every indicator we create. It lives on
+# the C++ object, so it survives plugin reloads and lets a fresh plugin
+# instance recognise (and clean up) icons left by a previous instance.
+INDICATOR_OWNED_PROP = "layerMultiplyToggleOwned"
 
 
 class LayerMultiplyToggle:
@@ -47,9 +51,6 @@ class LayerMultiplyToggle:
         self.saved_blend_modes = {}
         # layer id -> QgsLayerTreeViewIndicator currently shown in the tree
         self._indicators = {}
-        # every indicator object we created and have not yet deleted; lets us
-        # recognise our own (including orphaned) icons on any tree node.
-        self._owned_indicators = set()
         self.plugin_dir = os.path.dirname(__file__)
 
         # Icon paths (bundled with plugin)
@@ -351,30 +352,40 @@ class LayerMultiplyToggle:
             # pointer and never prunes it. After a layer (re)load the tree node
             # is rebuilt and a fresh node can reuse a freed pointer, exposing a
             # stale indicator here that renders as a duplicate icon. Drop every
-            # one of our indicators on this node except the one we keep.
+            # one of our indicators on this node except the one we keep. We
+            # recognise ours by the marker property, so this also clears icons
+            # left behind by a previous plugin instance after a reload.
             for existing in present:
-                if existing is not keep and existing in self._owned_indicators:
+                if existing is not keep and self._is_our_indicator(existing):
                     view.removeIndicator(node, existing)
                     existing.deleteLater()
-                    self._owned_indicators.discard(existing)
             if keep is not None:
                 self._set_indicator_state(keep, active)
             else:
-                ind = QgsLayerTreeViewIndicator(view)
-                ind.clicked.connect(
-                    lambda idx, layer_id=lid: self._on_indicator_clicked(layer_id)
-                )
+                ind = self._make_indicator(view, lid)
                 self._set_indicator_state(ind, active)
                 view.addIndicator(node, ind)
                 self._indicators[lid] = ind
-                self._owned_indicators.add(ind)
-        # Drop tracking for layers no longer in the tree. The indicator object
-        # stays alive in _owned_indicators (deleting it now would dangle the
-        # view's pointer map); a later refresh purges it if its node pointer
-        # gets reused.
+        # Drop tracking for layers no longer in the tree. The orphaned indicator
+        # stays attached to the (now-gone) node — deleting it would dangle the
+        # view's pointer map — and is purged by a later refresh once its node
+        # pointer is reused.
         for lid in list(self._indicators):
             if lid not in current:
                 self._indicators.pop(lid)
+
+    def _is_our_indicator(self, indicator):
+        """True if this indicator carries our marker property (any instance)."""
+        return bool(indicator.property(INDICATOR_OWNED_PROP))
+
+    def _make_indicator(self, view, lid):
+        """Create a marked, click-wired indicator for the given layer id."""
+        ind = QgsLayerTreeViewIndicator(view)
+        ind.setProperty(INDICATOR_OWNED_PROP, True)
+        ind.clicked.connect(
+            lambda idx, layer_id=lid: self._on_indicator_clicked(layer_id)
+        )
+        return ind
 
     def _clear_indicators(self):
         """Remove and delete every indicator we put on a live tree node.
@@ -386,16 +397,16 @@ class LayerMultiplyToggle:
         deleting an attached indicator would leave a dangling pointer that
         crashes the next repaint if the node pointer is reused. We therefore
         sweep the live tree (not just tracked ids) and drop every indicator
-        that is ours; any owned indicator left on an already-gone node stays
-        alive and is purged by a later refresh once its pointer is reused.
+        carrying our marker property — including icons left by a previous
+        plugin instance. An indicator left on an already-gone node stays alive
+        and is purged by a later refresh once its pointer is reused.
         """
         view = self.iface.layerTreeView()
         for node in self._iter_layer_nodes(QgsProject.instance().layerTreeRoot()):
             for ind in view.indicators(node):
-                if ind in self._owned_indicators:
+                if self._is_our_indicator(ind):
                     view.removeIndicator(node, ind)
                     ind.deleteLater()
-                    self._owned_indicators.discard(ind)
         self._indicators = {}
 
     def _on_indicator_clicked(self, layer_id):
