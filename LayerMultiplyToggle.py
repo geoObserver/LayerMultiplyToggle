@@ -13,9 +13,9 @@
 
 import json
 import os
-from qgis.PyQt.QtCore import Qt, QTimer
+from qgis.PyQt.QtCore import QTimer
 from qgis.PyQt.QtGui import QPainter, QIcon
-from qgis.PyQt.QtWidgets import QToolBar, QMenu
+from qgis.PyQt.QtWidgets import QToolBar, QToolButton, QMenu
 try:
     from qgis.PyQt.QtWidgets import QAction  # Qt5 / QGIS 3.x
 except ImportError:
@@ -45,6 +45,9 @@ class LayerMultiplyToggle:
         self.iface = iface
         self.toolbar = None
         self.action = None
+        # dropdown menu attached to the toolbar button (split button)
+        self.menu = None
+        self._show_icons_action = None
         self._cleared_connected = False
         self._model = None
         self._model_connected = False
@@ -97,11 +100,14 @@ class LayerMultiplyToggle:
         self.action.toggled.connect(self.toggle_multiply)
         self.toolbar.addAction(self.action)
 
-        # Right-click on the toolbar button opens a small options menu.
-        button = self.toolbar.widgetForAction(self.action)
-        if button is not None:
-            button.setContextMenuPolicy(self._custom_ctx_policy())
-            button.customContextMenuRequested.connect(self._show_tool_menu)
+        # Attach the options dropdown to the toolbar's QToolButton: the main
+        # button half toggles Multiply, the arrow opens the menu (split button) —
+        # the same style the earlier blend-mode version used.
+        tool_button = self.toolbar.widgetForAction(self.action)
+        if isinstance(tool_button, QToolButton):
+            self.menu = self._build_tool_menu()
+            tool_button.setMenu(self.menu)
+            tool_button.setPopupMode(self._menu_popup_mode())
 
         # Keep the action in sync with the active project's persisted state.
         project = QgsProject.instance()
@@ -140,6 +146,18 @@ class LayerMultiplyToggle:
         # re-add indicators after the GUI is torn down.
         self._indicators_enabled = False
         self._clear_indicators()
+
+        # Tear down the dropdown menu attached to the toolbar button. It is
+        # parented to the main window, so it must be deleted explicitly; detach
+        # it from the button first so the button keeps no dangling pointer.
+        if self.toolbar is not None and self.action is not None:
+            tool_button = self.toolbar.widgetForAction(self.action)
+            if isinstance(tool_button, QToolButton):
+                tool_button.setMenu(None)
+        if self.menu is not None:
+            self.menu.deleteLater()
+        self.menu = None
+        self._show_icons_action = None
 
         # Detach our action from the toolbar so the empty-check below is valid.
         if self.toolbar is not None and self.action is not None:
@@ -449,33 +467,34 @@ class LayerMultiplyToggle:
 
     # --- reset ---------------------------------------------------------------
 
-    def _custom_ctx_policy(self):
-        """Return Qt.CustomContextMenu (Qt5/Qt6 safe)."""
+    def _menu_popup_mode(self):
+        """Return QToolButton.MenuButtonPopup (Qt5/Qt6 safe)."""
         try:
-            return Qt.ContextMenuPolicy.CustomContextMenu  # Qt6 / PyQt5>=5.15
+            return QToolButton.ToolButtonPopupMode.MenuButtonPopup  # Qt6 / PyQt5>=5.15
         except AttributeError:
-            return Qt.CustomContextMenu  # older PyQt5
+            return QToolButton.MenuButtonPopup  # older PyQt5
 
-    def _show_tool_menu(self, pos):
-        """Right-click menu on the toolbar button: toggle icons + full reset."""
-        button = self.toolbar.widgetForAction(self.action) if self.toolbar else None
+    def _build_tool_menu(self):
+        """Build the dropdown menu shown by the toolbar button's arrow."""
         menu = QMenu(self.iface.mainWindow())
-        show_act = menu.addAction("Show layer icons")
-        show_act.setCheckable(True)
-        show_act.setChecked(self._indicators_visible)
-        show_act.toggled.connect(self._set_indicators_visible)
+        menu.setSeparatorsCollapsible(False)
+        self._show_icons_action = menu.addAction("Show layer icons")
+        self._show_icons_action.setCheckable(True)
+        self._show_icons_action.setChecked(self._indicators_visible)
+        # connect AFTER setChecked so seeding the state does not fire the slot
+        self._show_icons_action.toggled.connect(self._set_indicators_visible)
         menu.addSeparator()
         reset_act = menu.addAction("Reset: undo all changes and remove icons")
         reset_act.triggered.connect(self._reset_all)
-        anchor = button if button is not None else self.iface.mainWindow()
-        global_pos = anchor.mapToGlobal(pos)
-        (menu.exec if hasattr(menu, "exec") else menu.exec_)(global_pos)
-        # The menu is parented to the main window; free it so right-clicks
-        # don't accumulate QMenu objects.
-        menu.deleteLater()
+        return menu
 
     def _set_indicators_visible(self, visible):
-        """Show or hide the per-layer icons and persist the choice globally."""
+        """Show or hide the per-layer icons and persist the choice globally.
+
+        The layer-tree icons switch instantly: showing rebuilds them right away
+        and hiding strips them, then we repaint the tree viewport so the change
+        is visible without waiting for the next model refresh.
+        """
         self._indicators_visible = bool(visible)
         QgsSettings().setValue(SETTINGS_ICONS_VISIBLE, self._indicators_visible)
         if self._indicators_visible:
@@ -483,10 +502,14 @@ class LayerMultiplyToggle:
             # reappear immediately instead of waiting for the next activation.
             self._indicators_enabled = True
             self._refresh_indicators()
-            self._notify("Layer icons shown.")
+            message = "Layer icons shown."
         else:
             self._clear_indicators()
-            self._notify("Layer icons hidden.")
+            message = "Layer icons hidden."
+        view = self.iface.layerTreeView()
+        if view is not None and view.viewport() is not None:
+            view.viewport().update()
+        self._notify(message)
 
     def _reset_all(self, *args):
         """Undo everything the plugin did and return to a clean state.
