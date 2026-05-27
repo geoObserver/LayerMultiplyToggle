@@ -3,10 +3,10 @@ name=Layer Multiply Toggle
 qgisMinimumVersion=3.0
 qgisMaximumVersion=4.99
 description=Toggle the Multiply blend mode for all or selected layers and groups with a single click.
-version=0.4
+version=0.5
 author=Mike Elstermann (#geoObserver)
 email=news@geoobserver.de
-about=(26.05.2026) Adds a toolbar button that toggles the Multiply blend mode for all layers or only the selected layers/groups. A clickable Multiply icon next to each layer in the layer tree toggles Multiply per layer. Right-clicking the toolbar button resets everything (restore originals, remove icons, toggle off). Original blend modes are preserved and restored on toggling off, and the on/off state is stored per project. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
+about=(27.05.2026) Adds a toolbar button that toggles the Multiply blend mode for all layers or only the selected layers/groups. A clickable Multiply icon next to each layer in the layer tree toggles Multiply per layer. A dropdown menu on the toolbar button lets you show/hide the layer-tree icons on demand and reset everything (restore originals, remove icons, toggle off). Original blend modes are preserved and restored on toggling off, and the on/off state is stored per project. Compatible with QGIS 3.x (Qt5) and QGIS 4.x (Qt6).
 tracker=https://github.com/geoObserver/LayerMultiplyToggle/issues/
 repository=https://github.com/geoObserver/LayerMultiplyToggle/
 homepage=https://geoobserver.de/qgis-plugin-layermultiplytoggle/
@@ -15,6 +15,12 @@ experimental=False
 deprecated=False
 tags=layer,blend mode,multiply,rendering,hillshade,transparency,indicator
 changelog=
+    v0.5 - (27.05.2026)
+           - Show/hide the per-layer icons on demand via a dropdown menu on the toolbar button (global setting)
+           - Options moved from a right-click menu to the toolbar button's dropdown arrow (Show layer icons / Reset)
+           - Fix: duplicate indicator icons after (re)loading WMS/vector layers
+           - Fix: Reset / "remove all icons" now clears every icon, also across plugin reloads (marker-property identity); icons reliably reappear afterwards
+           - Hardened indicator lifecycle and menu state (no dangling pointers; the menu checkbox reflects actual icon visibility)
     v0.4 - (26.05.2026)
            - Preserves and exactly restores the original blend modes on toggling off
            - Per-project persistence of the on/off state

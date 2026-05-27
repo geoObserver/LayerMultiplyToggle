@@ -2,7 +2,7 @@
 
 ![QGIS](https://img.shields.io/badge/QGIS-3.x%20%7C%204.x-589632?logo=qgis&logoColor=white)
 ![Qt](https://img.shields.io/badge/Qt-5%20%7C%206-41cd52?logo=qt&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.4-blue)
+![Version](https://img.shields.io/badge/version-0.5-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0-brightgreen)
 
 **DE** — Schaltet mit einem Klick den Mischmodus **Multiplizieren** für **alle** oder nur die **ausgewählten** Ebenen und Gruppen ein und wieder aus.
@@ -156,6 +156,10 @@ The **Multiply** blend mode multiplies a layer's colours with those beneath it �
 ---
 
 ## Letzte Änderungen / Changelog
+
+### v0.5 (27.05.2026)
+- **DE:** Layerbaum-Icons bei Bedarf ein-/ausblenden über ein Dropdown-Menü am Werkzeugknopf (global gespeichert). Optionen vom Rechtsklick-Menü in das Dropdown am Werkzeugknopf verschoben (*Show layer icons* / *Reset*). Fehlerbehebungen: doppelte Icons nach dem (Neu-)Laden von WMS-/Vektor-Layern; *Reset / alle Icons entfernen* räumt jetzt jedes Icon ab – auch über Plugin-Reloads hinweg (Marker-Property als Identität) – und die Icons kommen danach zuverlässig zurück. Robusterer Indikator-Lebenszyklus und Menüzustand (keine baumelnden Zeiger; die Checkbox spiegelt die tatsächliche Sichtbarkeit).
+- **EN:** Show/hide the layer-tree icons on demand via a dropdown menu on the toolbar button (stored globally). Options moved from the right-click menu to the toolbar button's dropdown (*Show layer icons* / *Reset*). Bug fixes: duplicate icons after (re)loading WMS/vector layers; *Reset / remove all icons* now clears every icon — also across plugin reloads (marker-property identity) — and the icons reliably reappear afterwards. Hardened indicator lifecycle and menu state (no dangling pointers; the checkbox reflects actual visibility).
 
 ### v0.4 (26.05.2026)
 - **DE:** Sicherung und exakte Wiederherstellung der ursprünglichen Mischmodi beim Ausschalten. Projektbezogene Persistenz des Ein/Aus-Zustands. Anklickbares Multiply-Icon je Layer im Layerbaum (Multiplizieren pro Layer an/aus). Rechtsklick auf den Werkzeugknopf für vollständigen Reset. Werkzeugknopf als QAction neu umgesetzt, Rückmeldung über die Meldungsleiste. Kompatibilität mit dem Plugin Reloader. Bewusste Beschränkung auf den Modus **Multiplizieren**. Robuster Indikator-Lebenszyklus (keine Leaks/Waisen-Icons, Plugin-Reloader-sicher), gehärtetes Einlesen des projektbezogenen Status. Fehlerbehebungen (Werkzeugleisten-Leak beim Entladen, wirkungslose Gruppen-Eigenschaft entfernt).
