@@ -451,6 +451,14 @@ class LayerMultiplyToggle:
                     view.removeIndicator(node, ind)
                     ind.deleteLater()
         self._indicators = {}
+        # QgsLayerTreeView.removeIndicator only schedules update(); unlike
+        # addIndicator it does NOT force a viewport repaint (qgslayertreeview.cpp
+        # even comments "update() does not automatically trigger a repaint()").
+        # On macOS/Qt6 (QGIS 4) that deferred update is not flushed until the
+        # next UI event, so cleared icons linger until e.g. the menu is reopened.
+        # Force the repaint addIndicator does, so hide/reset clears instantly.
+        if view is not None and view.viewport() is not None:
+            view.viewport().repaint()
 
     def _on_indicator_clicked(self, layer_id):
         """Toggle multiply for a single layer via its tree indicator."""
@@ -524,9 +532,9 @@ class LayerMultiplyToggle:
     def _set_indicators_visible(self, visible):
         """Show or hide the per-layer icons and persist the choice globally.
 
-        The icons switch instantly: _refresh_indicators (via addIndicator) and
-        _clear_indicators (via removeIndicator) repaint the affected tree rows
-        themselves, so no extra viewport repaint is needed here.
+        The icons switch instantly: _refresh_indicators repaints via
+        addIndicator, and _clear_indicators forces the viewport repaint that
+        removeIndicator omits (needed on macOS/Qt6).
         """
         self._indicators_visible = bool(visible)
         QgsSettings().setValue(SETTINGS_ICONS_VISIBLE, self._indicators_visible)
